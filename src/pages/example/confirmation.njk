@@ -1,0 +1,6 @@
+---
+layout: layouts/service.njk
+title: Request complete
+permalink: /example/confirmation/
+---
+{% from "govuk/components/panel/macro.njk" import govukPanel %}{{ govukPanel({titleText: 'Request complete', html: 'Your prototype reference<br><strong>DEMO123</strong>'}) }}<p class="govuk-body">Thank you, <span data-answer="full-name">visitor</span>.</p><h2 class="govuk-heading-m">What happens next</h2><p class="govuk-body">This is the end of the example journey. No application has been submitted.</p><a class="govuk-link" data-reset href="{{ '/example/start/' | url }}">Start again with clear answers</a>

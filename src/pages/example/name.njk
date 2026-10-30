@@ -1,0 +1,8 @@
+---
+layout: layouts/service.njk
+title: What is your name?
+permalink: /example/name/
+back: /example/start/
+---
+{% from "govuk/components/input/macro.njk" import govukInput %}{% from "govuk/components/button/macro.njk" import govukButton %}
+<form data-journey action="{{ '/example/eligibility/' | url }}" novalidate><div data-errors></div>{{ govukInput({id: 'full-name', name: 'full-name', label: {text: 'What is your name?', isPageHeading: true, classes: 'govuk-label--l'}, hint: {text: 'Use a made-up name for this prototype.'}, attributes: {'data-required': 'Enter your name', maxlength: '100'}, autocomplete: 'name'}) }}{{ govukButton({text: 'Continue'}) }}</form>

@@ -1,0 +1,7 @@
+---
+layout: layouts/service.njk
+title: Check your answers
+permalink: /example/check-answers/
+back: /example/eligibility/
+---
+{% from "govuk/components/button/macro.njk" import govukButton %}<h1 class="govuk-heading-l">Check your answers</h1><dl class="govuk-summary-list">{% for field,label,path in [['full-name','Name','name'],['eligible','Aged 18 or over','eligibility'],['interests','Interests','eligibility']] %}<div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">{{ label }}</dt><dd class="govuk-summary-list__value" data-answer="{{ field }}">Not provided</dd><dd class="govuk-summary-list__actions"><a class="govuk-link" href="{{ ('/example/' + path + '/') | url }}?return=check-answers">Change<span class="govuk-visually-hidden"> {{ label }}</span></a></dd></div>{% endfor %}</dl><h2 class="govuk-heading-m">Now send your request</h2><p class="govuk-body">This is a prototype. No request will be sent to a real service.</p><form data-journey action="{{ '/example/confirmation/' | url }}">{{ govukButton({text: 'Accept and send'}) }}</form>

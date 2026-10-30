@@ -1,0 +1,8 @@
+eligible-applicant:
+  label: Eligible applicant (fictional)
+  start: /example/check-answers/
+  answers: { full-name: Robin Example, eligible: 'yes', interests: [walking] }
+ineligible-applicant:
+  label: Ineligible applicant (fictional)
+  start: /example/ineligible/
+  answers: { full-name: Morgan Sample, eligible: 'no', interests: [] }

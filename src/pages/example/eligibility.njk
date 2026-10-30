@@ -1,0 +1,8 @@
+---
+layout: layouts/service.njk
+title: Are you aged 18 or over?
+permalink: /example/eligibility/
+back: /example/name/
+---
+{% from "govuk/components/radios/macro.njk" import govukRadios %}{% from "govuk/components/checkboxes/macro.njk" import govukCheckboxes %}{% from "govuk/components/button/macro.njk" import govukButton %}
+<form data-journey action="{{ '/example/check-answers/' | url }}" novalidate><div data-errors></div>{{ govukRadios({idPrefix: 'eligible', name: 'eligible', fieldset: {legend: {text: 'Are you aged 18 or over?', isPageHeading: true, classes: 'govuk-fieldset__legend--l'} }, items: [{value: 'yes', text: 'Yes', attributes: {'data-required': 'Select whether you are aged 18 or over'} }, {value: 'no', text: 'No'}]}) }}{{ govukCheckboxes({name: 'interests', fieldset: {legend: {text: 'What are you interested in? (optional)', classes: 'govuk-fieldset__legend--m'} }, hint: {text: 'Select all that apply.'}, items: [{value: 'walking', text: 'Walking'}, {value: 'wildlife', text: 'Wildlife'}]}) }}{{ govukButton({text: 'Continue'}) }}</form>

@@ -1,0 +1,8 @@
+name: Apply for a countryside visit
+prototypeId: countryside-visit
+schemaVersion: 1
+storage: session
+resetOnStart: false
+publicDemoGate:
+  enabled: false
+  passphrase: fictional-demo

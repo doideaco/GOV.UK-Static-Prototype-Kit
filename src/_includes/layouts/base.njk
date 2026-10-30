@@ -1,0 +1,25 @@
+{% from "govuk/components/header/macro.njk" import govukHeader %}
+{% from "govuk/components/footer/macro.njk" import govukFooter %}
+{% from "govuk/components/skip-link/macro.njk" import govukSkipLink %}
+<!doctype html><html lang="en" class="govuk-template"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ title }} – {{ site.name }} – GOV.UK</title>
+<link rel="icon" href="{{ '/assets/images/favicon.ico' | url }}"><link rel="stylesheet" href="{{ '/assets/main.css' | url }}">
+{% if site.publicDemoGate.enabled %}<style>#prototype{display:none}</style>{% endif %}
+</head><body class="govuk-template__body">
+<script>document.body.className += ' js-enabled';</script>
+{{ govukSkipLink({href: '#main-content', text: 'Skip to main content'}) }}
+{% if site.publicDemoGate.enabled %}
+<section aria-label="Prototype entry" id="demo-gate" class="govuk-width-container govuk-!-padding-top-9"><h1 class="govuk-heading-xl">Enter this prototype</h1><p class="govuk-body">This convenience gate does not protect the prototype or its files. Use fictional data only.</p><noscript><p class="govuk-body">Enable JavaScript to use this prototype and its demo gate.</p></noscript><form id="gate-form"><div class="govuk-form-group"><label class="govuk-label" for="gate-passphrase">Demo passphrase</label><p id="gate-error" class="govuk-error-message" hidden>Enter the correct demo passphrase</p><input class="govuk-input govuk-input--width-20" id="gate-passphrase" type="password" aria-describedby="gate-error"></div><button class="govuk-button">Continue</button></form></section>{% endif %}
+<div id="prototype">
+<header>{{ govukHeader({homepageUrl: ('/' | url), productName: 'Prototype'}) }}
+<div class="service-bar"><div class="govuk-width-container"><a class="govuk-link" href="{{ '/example/start/' | url }}">{{ site.name }}</a></div></div>
+</header><div class="govuk-width-container"><section aria-label="Prototype information"><div class="govuk-phase-banner"><p class="govuk-phase-banner__content"><strong class="govuk-tag govuk-phase-banner__content__tag">Prototype</strong><span class="govuk-phase-banner__text">This is a prototype. Use fictional information only.</span></p></div>
+<p id="scenario-notice" class="govuk-body govuk-!-margin-top-4" hidden></p>
+<noscript><p class="govuk-body">JavaScript is required to save answers and follow this prototype journey.{% if site.publicDemoGate.enabled %} The demo gate also requires JavaScript.{% endif %}</p></noscript>
+</section>{% if back %}<nav aria-label="Back"><a href="{{ back | url }}" class="govuk-back-link" data-back>Back</a></nav>{% endif %}
+<main class="govuk-main-wrapper" id="main-content"><div class="govuk-grid-row"><div class="govuk-grid-column-two-thirds">{{ content | safe }}</div></div></main>
+<nav aria-label="Prototype controls"><p class="govuk-body"><a href="{{ '/' | url }}" class="govuk-link" data-reset>Clear prototype answers</a>{% if site.publicDemoGate.enabled %} · <a class="govuk-link" href="{{ '/' | url }}" data-signout>Leave prototype</a>{% endif %}</p></nav>
+</div><footer>{{ govukFooter({meta: {items: [{href: ('/' | url), text: 'Prototype home'}]} }) }}</footer></div>
+<script id="prototype-config" type="application/json">{{ manifest | json | safe }}</script>
+<script src="{{ '/assets/runtime.js' | url }}" defer></script></body></html>

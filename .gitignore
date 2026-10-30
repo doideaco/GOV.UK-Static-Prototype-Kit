@@ -1,0 +1,7 @@
+node_modules/
+_site/
+build/
+playwright-report/
+test-results/
+.env
+.DS_Store

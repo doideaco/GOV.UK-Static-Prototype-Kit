@@ -1,0 +1,31 @@
+import { test, expect } from '@playwright/test';
+import AxeBuilder from '@axe-core/playwright';
+const base=process.env.BASE_PATH || '/';
+test.skip(process.env.TEST_DEMO_GATE === 'true', 'Separate gate suite');
+test('complete journey, validation focus, restore, edit, and clear',async({page})=>{
+ await page.goto(base+'example/name/');
+ await page.getByRole('button',{name:'Continue'}).click();
+ await expect(page.locator('.govuk-error-summary')).toBeFocused();
+ await page.getByRole('link',{name:'Enter your name',exact:true}).click();
+ await expect(page.getByLabel('What is your name?')).toBeFocused();
+ await page.getByLabel('What is your name?').fill('Robin Example');
+ await page.getByRole('button',{name:'Continue'}).click();
+ await page.getByLabel('Yes',{exact:true}).check();await page.getByLabel('Walking',{exact:true}).check();
+ await page.getByRole('button',{name:'Continue'}).click();await page.reload();
+ await expect(page.locator('[data-answer="full-name"]')).toHaveText('Robin Example');
+ await expect(page.locator('[data-answer="interests"]')).toHaveText('walking');
+ await page.getByRole('link',{name:'Change Name',exact:true}).click();
+ await expect(page.getByLabel('What is your name?')).toHaveValue('Robin Example');
+ await page.getByLabel('What is your name?').fill('Morgan Sample');await page.getByRole('button',{name:'Continue'}).click();
+ await expect(page).toHaveURL(/check-answers/);await expect(page.locator('[data-answer="full-name"]')).toHaveText('Morgan Sample');
+ expect((await new AxeBuilder({page}).analyze()).violations).toEqual([]);
+ await page.getByRole('button',{name:'Accept and send'}).click();await expect(page.getByRole('heading',{name:'Request complete'})).toBeVisible();
+ await page.getByRole('link',{name:'Start again with clear answers'}).click();await page.getByRole('button',{name:'Start now'}).click();await expect(page.getByLabel('What is your name?')).toHaveValue('');
+});
+test('no branch and scenario once',async({page})=>{
+ await page.goto(base+'example/start/?scenario=eligible-applicant');await expect(page).toHaveURL(/check-answers/);
+ await page.getByRole('link',{name:'Change Aged 18 or over'}).click();await expect(page.getByLabel('Walking',{exact:true})).toBeChecked();
+ await page.getByLabel('Walking',{exact:true}).uncheck();await page.getByLabel('No',{exact:true}).check();await page.getByRole('button',{name:'Continue'}).click();await expect(page).toHaveURL(/ineligible/);await page.reload();
+ await page.getByRole('link',{name:'Change your answer',exact:true}).click();await expect(page.getByLabel('No',{exact:true})).toBeChecked();await expect(page.getByLabel('Walking',{exact:true})).not.toBeChecked();
+});
+test('keyboard navigation and readable static start',async({page})=>{await page.goto(base+'example/start/');await page.keyboard.press('Tab');await expect(page.getByRole('link',{name:'Skip to main content'})).toBeFocused();expect((await new AxeBuilder({page}).analyze()).violations).toEqual([]);});

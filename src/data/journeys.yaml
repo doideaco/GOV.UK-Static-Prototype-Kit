@@ -1,0 +1,16 @@
+journeys:
+  example:
+    steps:
+      - path: /example/start/
+        next: /example/name/
+      - path: /example/name/
+        next: /example/eligibility/
+      - path: /example/eligibility/
+        next:
+          - when: { field: eligible, equals: 'yes' }
+            path: /example/check-answers/
+          - otherwise: /example/ineligible/
+      - path: /example/check-answers/
+        next: /example/confirmation/
+      - path: /example/ineligible/
+      - path: /example/confirmation/

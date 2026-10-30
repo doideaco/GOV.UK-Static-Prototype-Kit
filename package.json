@@ -1,0 +1,43 @@
+{
+  "name": "govuk-static-prototype-kit",
+  "version": "1.0.0",
+  "description": "Static-first GOV.UK service prototypes with Eleventy and browser journeys",
+  "scripts": {
+    "assets": "node tooling/build-assets.mjs",
+    "build": "npm run assets && eleventy --config=tooling/eleventy.config.mjs",
+    "dev": "npm run assets && concurrently -k \"node tooling/watch-assets.mjs\" \"eleventy --config=tooling/eleventy.config.mjs --serve\"",
+    "preview": "http-server _site -p 8080 -c-1",
+    "typecheck": "tsc",
+    "test": "vitest run tests/unit",
+    "check": "npm run typecheck && npm test && npm run build && node tooling/check-output.mjs",
+    "test:e2e": "playwright test",
+    "test:subpath": "BASE_PATH=/sample-repo/ npm run build && BASE_PATH=/sample-repo/ playwright test",
+    "test:gate": "PUBLIC_DEMO_GATE_ENABLED=true BASE_PATH=/sample-repo/ npm run build && TEST_DEMO_GATE=true BASE_PATH=/sample-repo/ playwright test gate.spec.ts",
+    "test:visual": "VISUAL_TESTS=true playwright test visual.spec.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "type": "module",
+  "dependencies": {
+    "@11ty/eleventy": "3.1.7",
+    "govuk-frontend": "6.6.0",
+    "nunjucks": "3.2.4",
+    "yaml": "2.9.1"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.14.0",
+    "@playwright/test": "1.64.1",
+    "@types/node": "26.6.6",
+    "concurrently": "10.0.6",
+    "esbuild": "0.28.2",
+    "http-server": "14.1.1",
+    "sass": "1.107.0",
+    "typescript": "7.0.2",
+    "vitest": "5.0.5"
+  },
+  "private": true,
+  "engines": {
+    "node": ">=22"
+  }
+}

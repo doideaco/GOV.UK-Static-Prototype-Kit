@@ -1,0 +1,6 @@
+---
+layout: layouts/service.njk
+title: Apply for a countryside visit
+permalink: /example/start/
+---
+{% from "govuk/components/button/macro.njk" import govukButton %}<h1 class="govuk-heading-xl">Apply for a countryside visit</h1><p class="govuk-body-l">Use this service to request a place on a guided countryside visit.</p><p class="govuk-body">This example is for prototype research only. It takes about 2 minutes.</p><h2 class="govuk-heading-m">Before you start</h2><p class="govuk-body">You must be aged 18 or over. Use a made-up name when trying this service.</p><form data-journey action="{{ '/example/name/' | url }}">{{ govukButton({text: 'Start now', isStartButton: true}) }}</form>

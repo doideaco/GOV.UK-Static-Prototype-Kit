@@ -1,0 +1,4 @@
+@use "govuk/index" with ($govuk-assets-path: "./");
+.service-bar { background: #f3f2f1; border-bottom: 1px solid #b1b4b6; padding: 18px 0; }
+.service-bar a { font-family: Arial,sans-serif; font-size: 24px; font-weight: 700; color: #0b0c0c; text-decoration: none; }
+[hidden] { display: none !important; }
