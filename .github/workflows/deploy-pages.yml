@@ -23,11 +23,14 @@ jobs:
       - run: npm ci
       - uses: actions/configure-pages@v5
         id: pages
-      - run: npm run build
+      - run: node tooling/encryption/deploy-build.mjs
         env:
           BASE_PATH: ${{ steps.pages.outputs.base_path }}/
           NODE_ENV: production
+          PROTOTYPE_PUBLISH_MODE: ${{ vars.PROTOTYPE_PUBLISH_MODE || 'static' }}
+          ENCRYPTION_PASSPHRASE: ${{ secrets.ENCRYPTION_PASSPHRASE }}
       - uses: actions/upload-pages-artifact@v3
-        with: {path: _site}
+        with:
+          path: ${{ vars.PROTOTYPE_PUBLISH_MODE == 'encrypted' && '_encrypted' || '_site' }}
       - uses: actions/deploy-pages@v4
         id: deployment

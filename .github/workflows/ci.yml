@@ -17,3 +17,4 @@ jobs:
       - run: node tooling/check-output.mjs
         env: {BASE_PATH: /sample-repo/}
       - run: npm run test:gate
+      - run: npm run test:encrypted

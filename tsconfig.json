@@ -13,6 +13,7 @@
     "skipLibCheck": true
   },
   "include": [
-    "src/assets/scripts/**/*.ts"
+    "src/assets/scripts/**/*.ts",
+    "tooling/encryption/*.ts"
   ]
 }

@@ -1,6 +1,6 @@
 {
   "name": "govuk-static-prototype-kit",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Static-first GOV.UK service prototypes with Eleventy and browser journeys",
   "scripts": {
     "assets": "node tooling/build-assets.mjs",
@@ -13,7 +13,10 @@
     "test:e2e": "playwright test",
     "test:subpath": "BASE_PATH=/sample-repo/ npm run build && BASE_PATH=/sample-repo/ playwright test",
     "test:gate": "PUBLIC_DEMO_GATE_ENABLED=true BASE_PATH=/sample-repo/ npm run build && TEST_DEMO_GATE=true BASE_PATH=/sample-repo/ playwright test gate.spec.ts",
-    "test:visual": "VISUAL_TESTS=true playwright test visual.spec.ts"
+    "test:visual": "VISUAL_TESTS=true playwright test visual.spec.ts",
+    "build:encrypted": "node tooling/encryption/build.mjs",
+    "preview:encrypted": "http-server _encrypted -p 8080 -c-1",
+    "test:encrypted": "node tooling/encryption/test.mjs"
   },
   "keywords": [],
   "author": "",
@@ -33,6 +36,7 @@
     "esbuild": "0.28.2",
     "http-server": "14.1.1",
     "sass": "1.107.0",
+    "staticrypt": "3.5.4",
     "typescript": "7.0.2",
     "vitest": "5.0.5"
   },

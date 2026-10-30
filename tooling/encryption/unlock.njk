@@ -1,0 +1,22 @@
+{% from "govuk/components/header/macro.njk" import govukHeader %}
+{% from "govuk/components/footer/macro.njk" import govukFooter %}
+{% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+<!doctype html><html lang="en" class="govuk-template"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow"><meta name="referrer" content="no-referrer">
+<title>Unlock prototype</title><link rel="icon" href="{{ root }}assets/images/favicon.ico">
+<link rel="stylesheet" href="{{ root }}unlock.css"></head>
+<body class="govuk-template__body"><header>{{ govukHeader({productName:'Encrypted prototype'}) }}</header>
+<div class="govuk-width-container"><main id="main-content" class="govuk-main-wrapper"><div class="govuk-grid-row"><div class="govuk-grid-column-two-thirds">
+<div id="unlock-error" class="govuk-error-summary" tabindex="-1" role="alert" hidden><h2 class="govuk-error-summary__title">There is a problem</h2><p id="unlock-error-message" class="govuk-body"></p></div>
+<h1 class="govuk-heading-l">Unlock this prototype</h1><p class="govuk-body">Enter the passphrase shared with you. This prototype is encrypted and will be decrypted in your browser.</p>
+<p class="govuk-body">Use fictional information only. Unlocking is remembered for this tab session. Use “Lock prototype” when you finish.</p>
+<p class="govuk-body">JavaScript is required to decrypt this prototype.</p><noscript><p class="govuk-body">Enable JavaScript and reload the page.</p></noscript>
+<form id="unlock-form" method="dialog">
+{{ govukInput({id:'encryption-passphrase',  type:'password', disabled:true, label:{text:'Passphrase'}, attributes:{autocomplete:'current-password',required:true,'aria-describedby':'unlock-hint'} }) }}
+<p id="unlock-hint" class="govuk-hint">Ask the person who shared the prototype if you do not have the passphrase.</p>
+{{ govukButton({text:'Unlock prototype',disabled:true}) }}
+<p class="govuk-body" id="unlock-status" role="status"></p>
+</form></div></div></main></div><footer>{{ govukFooter({}) }}</footer>
+<script src="{{ root }}unlock.js" data-payload="{{ root }}payload.json" defer></script></body></html>

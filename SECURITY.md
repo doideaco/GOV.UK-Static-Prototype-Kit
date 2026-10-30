@@ -7,3 +7,11 @@ The demo gate is a bypassable convenience screen. Its public passphrase and HTML
 For confidential prototypes deploy `_site` behind organisational authentication or Cloudflare Access. Protect every HTML and asset request before delivery, disable any public Pages/preview/origin endpoint, and verify unauthenticated deep links and assets are rejected. Configure identity policies and session expiry with your organisation. This is a hosting migration, not a frontend authentication adapter.
 
 Do not commit secrets. Report security issues privately to the repository owner's security contact rather than including sensitive information in public issues.
+
+## Encrypted export
+
+Optional encrypted publishing protects generated prototype files in `_encrypted/` using the pinned StatiCrypt implementation. It does not make public source/history private, protect entered answers, prevent offline password guessing, authenticate the hosting origin, or provide per-user revocation. The integration has not had an independent security audit. Continue to use fictional information.
+
+Never publish plaintext `_site/` or `build/` when intending an encrypted export. Keep the real `ENCRYPTION_PASSPHRASE` in a build-time CI secret or enter it through the hidden local prompt. A derived session unlock key is an access credential, readable by scripts on the same origin. Locking clears the current tab's key, not copies held by other tabs or visitors.
+
+The default deployment mode is static. Set repository variable `PROTOTYPE_PUBLISH_MODE` to `encrypted` and supply the Actions secret `ENCRYPTION_PASSPHRASE`; missing/short credentials stop deployment. Protect settings from unintended changes back to static publication. Read the full [encrypted-export threat model](docs/encrypted-export.md) before use.

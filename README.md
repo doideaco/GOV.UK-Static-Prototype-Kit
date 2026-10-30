@@ -33,6 +33,7 @@ Initially oriented towards Defra service teams, the starter is intended for desi
 - **An editable starter service:** start → name → eligibility → check your answers → confirmation, with an ineligible branch and change-answer links.
 - **Browser answers:** session storage by default, optional local storage, form restoration and a clear-answers action.
 - **Declarative journeys:** YAML rules for branching, with build-time checks for invalid routes and unsupported conditions.
+- **Optional encrypted export:** encrypt the complete generated site, unlock it in the browser and keep the publishing passphrase out of deployed files.
 - **Research scenarios:** shareable, allowlisted scenario IDs with invented answers and predictable reset behaviour.
 - **Static deployment:** clean page URLs, one base-path helper, and a GitHub Actions workflow for repository sites and root/custom domains.
 - **Checks:** TypeScript, Vitest, Playwright, axe checks, root/subpath coverage and opt-in visual comparisons.
@@ -250,11 +251,24 @@ This is intentionally a public demo passphrase. Entry is remembered in session s
 
 **The passphrase, HTML, scripts, assets and fictional scenario data are still recoverable by anyone with the URL.** Visitors can bypass the gate or forge the browser marker. A private source repository does not by itself make a publicly published Pages site private. Do not store actual secrets in frontend configuration or GitHub's public build artefacts.
 
-### Proposed: encrypted static export
+### Optional: encrypted static export
 
-A possible next step is to encrypt prototype content at build time and decrypt it in a visitor's browser. This would change what public hosting receives: ciphertext rather than readable prototype pages. It is a different mechanism from hiding content behind a client-side password check.
+Encrypted publishing is now available. It protects the generated pages, embedded scenarios, scripts, styles and custom assets inside one authenticated encrypted payload. Public routes show a generic GOV.UK unlock screen; the browser decrypts the content after entry. No raw passphrase or decryption key is included in the deployment.
 
-**Encrypted export is not implemented in this version.** There is no encryption command or secure publishing mode to enable yet. Before adding one, the design needs to account for all pages, revealing assets, public source/history, build artefacts, key handling, offline password guessing and the inability to revoke downloaded copies. A client-side hash of a demo password would not provide this protection.
+```sh
+npm run build:encrypted
+npm run preview:encrypted
+```
+
+The build prompts for a strong, unique passphrase with input hidden (minimum 20 characters). Publish **only `_encrypted/`**. Ordinary development and `npm run build` still use plaintext `_site/` locally.
+
+For GitHub Pages, add the Actions repository variable `PROTOTYPE_PUBLISH_MODE=encrypted` and an Actions secret named `ENCRYPTION_PASSPHRASE`, then run the existing deployment workflow. Missing/short credentials fail the encrypted deployment; it does not fall back to plaintext. The default publishing mode remains `static`, so protect settings changes that could switch it back.
+
+Unlocking is remembered in sessionStorage for the current tab using a derived decryption key. **Lock prototype** clears that key and the prototype's fictional answers. The key is itself an access credential; untrusted scripts on the same origin can endanger it.
+
+**This repository's starter source and screenshots are already public.** Encrypting a deployment cannot make those copies secret. Use a separate private source repository for withheld designs, review all publication channels and choose a long random passphrase: downloaded ciphertext permits offline password guessing. There is no individual access revocation, and downloaded copies cannot be recalled. JavaScript and HTTPS (or localhost) are required.
+
+Read the [encrypted export guide](docs/encrypted-export.md) for the exact publishing setup, browser behaviour, supported asset patterns and threat model. This mode is not a replacement for authenticated hosting of sensitive material.
 
 ### For material that requires access control
 
@@ -266,6 +280,9 @@ Use organisational authenticated hosting, or an access service configured to pro
 | --- | --- |
 | `npm run dev` | Build assets, watch source and serve the prototype locally. |
 | `npm run build` | Generate the static site in `_site/`. |
+| `npm run build:encrypted` | Prompt for a passphrase (or use the CI secret), build and encrypt the complete site into `_encrypted/`. |
+| `npm run preview:encrypted` | Serve a root-path encrypted build locally on port 8080. |
+| `npm run test:encrypted` | Verify encrypted publishing and journeys at a dotted repository subpath on an isolated port. |
 | `npm run preview` | Serve the existing `_site/` output on port 8080; does not rebuild. |
 | `npm run check` | Typecheck, run unit tests, build, validate configuration and check local generated URLs. |
 | `npm run test:e2e` | Run desktop/mobile browser journeys, form-control and axe checks against built output. |
@@ -287,6 +304,7 @@ npm run test:e2e
 npm run test:subpath
 BASE_PATH=/sample-repo/ node tooling/check-output.mjs
 npm run test:gate
+npm run test:encrypted
 npm run build
 npm run test:visual
 ```
@@ -315,9 +333,10 @@ src/
 tooling/               Eleventy configuration, build pipeline and rule validation
 tests/unit/            Rule evaluation, route validation and storage tests
 tests/e2e/             Journey, control, gate, accessibility and visual tests
-docs/                  Architecture decisions and README imagery
+docs/                  Architecture, encrypted publishing guide and README imagery
 .github/workflows/     Checks and GitHub Pages deployment
-_site/                 Generated static output; ignored by Git
+_site/                 Generated plaintext output; ignored by Git
+_encrypted/            Optional encrypted publishing output; ignored by Git
 ```
 
 ## Implementation and next steps
@@ -331,7 +350,9 @@ The initial implementation follows four stages:
 | Research tools | Fictional scenario URLs and the optional, explicitly bypassable demo gate. |
 | Release foundation | Authoring/security documentation, architecture decisions, pinned dependencies, automated checks and visual baselines. |
 
-Useful next work includes evaluating encrypted static export, making change-answer return routes fully configurable, broadening validation beyond required fields, and establishing reviewed Linux visual baselines for CI. These are future improvements, not capabilities claimed by the current kit.
+Encrypted export is an additional publishing mode with complete-file encryption, a generic unlock screen, tab-session unlocking, a lock action, CI-secret support and dedicated browser tests. See its [implementation and limitations](docs/encrypted-export.md).
+
+Useful next work includes making change-answer return routes fully configurable, broadening validation beyond required fields, and establishing reviewed Linux visual baselines for CI. These are future improvements, not capabilities claimed by the current kit.
 
 ## Troubleshooting
 

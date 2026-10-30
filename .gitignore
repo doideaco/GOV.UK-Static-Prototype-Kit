@@ -5,3 +5,8 @@ playwright-report/
 test-results/
 .env
 .DS_Store
+
+_encrypted/
+.encrypted-stage-*/
+.env.*
+!.env.example

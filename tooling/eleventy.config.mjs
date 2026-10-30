@@ -16,7 +16,7 @@ function configuration(base) {
     const source = fs.readFileSync(`src/pages/${f}`, 'utf8');
     const front = source.match(/^---\n([\s\S]*?)\n---/);
     const route = front && YAML.parse(front[1]).permalink;
-    if (typeof route !== 'string' || !/^\/(?:[a-zA-Z0-9_-]+\/)*$/.test(route)) throw Error(`Page ${f} needs an absolute directory permalink`);
+    if (typeof route !== 'string' || !/^\/(?:[a-zA-Z0-9_.-]+\/)*$/.test(route)) throw Error(`Page ${f} needs an absolute directory permalink`);
     return route;
   });
   if (new Set(routes).size !== routes.length) throw Error('Duplicate page permalinks');
@@ -26,7 +26,7 @@ function configuration(base) {
 }
 export default function(eleventy) {
   const base = process.env.BASE_PATH || '/';
-  if (!/^\/(?:[a-zA-Z0-9_-]+\/)*$/.test(base)) throw Error('BASE_PATH must be / or /repository/');
+  if (!/^\/(?:[a-zA-Z0-9_.-]+\/)*$/.test(base) || base.split('/').some(part => part === '.' || part === '..')) throw Error('BASE_PATH must be / or /repository/');
   let manifest = configuration(base);
   eleventy.on('eleventy.before', () => { manifest = configuration(base); });
   eleventy.addGlobalData('site', () => manifest.site);
