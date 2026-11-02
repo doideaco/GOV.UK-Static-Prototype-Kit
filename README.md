@@ -201,7 +201,42 @@ A scenario replaces stored answers, records its active ID and navigates to its s
 
 Development displays the active scenario; `NODE_ENV=production` hides that notice. Scenario IDs and their fictional presets are public in the generated site. Do not put participant details in scenario definitions or URLs.
 
-Storage is namespaced as `govuk-static-kit:<prototypeId>:v<schemaVersion>`. Set `storage: local` for persistence across browser sessions, or `resetOnStart: true` to clear answers on the sample start page. Session storage remains the default. If browser storage is unavailable, the runtime falls back to page-local memory; answers will not survive navigation in that mode.
+### Choose how long answers persist
+
+Both options work on GitHub Pages without a backend. Configure them in [`src/data/site.yaml`](src/data/site.yaml), then rebuild and redeploy for the change to reach the published prototype.
+
+| Setting | Where answers survive | When to use it |
+| --- | --- | --- |
+| `storage: session` (default) | Page navigation and reloads within the same tab session. | Ordinary research sessions where answers should not normally carry over to a later visit. |
+| `storage: local` (optional) | Later visits and browser restarts in the same browser profile and on the same origin, until cleared or removed by the browser. | Fictional journeys that researchers want to leave and resume later. |
+
+To enable persistence across visits:
+
+```yaml
+prototypeId: my-service-prototype
+schemaVersion: 1
+storage: local
+resetOnStart: false
+```
+
+To use the default tab-session behaviour, set `storage: session`. Keep `resetOnStart: false` when you want to resume saved answers. Setting it to `true` clears answers whenever the sample `/example/start/` page loads without a scenario parameter; it does not automatically reset every custom start route.
+
+### Scope, clearing and research use
+
+- Answers stay in the visitor's browser profile and device. They are not uploaded to GitHub, shared between participants, synchronised across devices or available as research results to the prototype author.
+- Local storage is shared by tabs on the same origin. It is not separate participant storage: use **Clear prototype answers** between participants sharing a browser. Simultaneous tabs can overwrite one another's answers; there is no live cross-tab synchronisation.
+- **Clear prototype answers** deletes saved answers from the selected storage and removes the active-scenario marker. In encrypted mode, **Lock prototype** also clears saved answers, including local-storage answers. Locking therefore ends the saved journey rather than offering “lock and resume”.
+- Storage keys are namespaced as `govuk-static-kit:<prototypeId>:v<schemaVersion>`. Use a unique `prototypeId` for each prototype to avoid collisions. GitHub Pages repository paths under the same owner's host share an origin; namespacing prevents accidental collisions, not access by other scripts on that origin.
+- Increasing `schemaVersion` starts a new answer namespace; it does not migrate or erase the old namespace. Changing storage modes also does not migrate or clear answers from the previous storage. Clear answers before switching modes or deliberately clean up old prototype keys when needed.
+- Browser settings, private browsing and storage eviction can prevent persistence or remove data. If storage is unavailable, the runtime falls back to page-local memory and answers will not survive navigation. Browsers may restore session storage when reopening tabs, so closing a tab is not a reliable data-erasure mechanism.
+
+### Saved answers and encrypted publishing are separate
+
+`storage: local` works with encrypted export, but **saved answers are still readable JSON in browser storage**. Export encryption protects the published prototype files; it does not encrypt answers entered during a visit.
+
+The encryption unlock key always uses **sessionStorage**, regardless of the answer-storage setting. Choosing local storage does not enable a permanent “remember my passphrase” option. The raw passphrase is never stored. A later visit may require unlocking again before previously saved local answers are restored, provided they were not cleared or removed by the browser. Other unlocked tabs retain their own session credentials when one tab locks.
+
+Use fictional answers only. Local storage is a convenience for resuming a prototype, not a secure place for participant information or government data.
 
 ## Publish to GitHub Pages
 
@@ -264,7 +299,7 @@ The build prompts for a strong, unique passphrase with input hidden (minimum 20 
 
 For GitHub Pages, add the Actions repository variable `PROTOTYPE_PUBLISH_MODE=encrypted` and an Actions secret named `ENCRYPTION_PASSPHRASE`, then run the existing deployment workflow. Missing/short credentials fail the encrypted deployment; it does not fall back to plaintext. The default publishing mode remains `static`, so protect settings changes that could switch it back.
 
-Unlocking is remembered in sessionStorage for the current tab using a derived decryption key. **Lock prototype** clears that key and the prototype's fictional answers. The key is itself an access credential; untrusted scripts on the same origin can endanger it.
+Unlocking is remembered in sessionStorage for the current tab using a derived decryption key. **Lock prototype** clears that key and the prototype's fictional answers, even when `storage: local` is enabled. Answer storage remains separate and unencrypted; see [saved answers and encrypted publishing](#saved-answers-and-encrypted-publishing-are-separate). The key is itself an access credential; untrusted scripts on the same origin can endanger it.
 
 **This repository's starter source and screenshots are already public.** Encrypting a deployment cannot make those copies secret. Use a separate private source repository for withheld designs, review all publication channels and choose a long random passphrase: downloaded ciphertext permits offline password guessing. There is no individual access revocation, and downloaded copies cannot be recalled. JavaScript and HTTPS (or localhost) are required.
 
