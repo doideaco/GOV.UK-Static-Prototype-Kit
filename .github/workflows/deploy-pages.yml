@@ -31,7 +31,7 @@ jobs:
           NODE_ENV: production
           PROTOTYPE_PUBLISH_MODE: ${{ vars.PROTOTYPE_PUBLISH_MODE || 'encrypted' }}
           ENCRYPTION_PASSPHRASE: ${{ secrets.ENCRYPTION_PASSPHRASE }}
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: ${{ steps.publish.outputs.directory }}
       - uses: actions/deploy-pages@v4
