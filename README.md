@@ -33,7 +33,7 @@ Initially oriented towards Defra service teams, the starter is intended for desi
 - **An editable starter service:** start → name → eligibility → check your answers → confirmation, with an ineligible branch and change-answer links.
 - **Browser answers:** session storage by default, optional local storage, form restoration and a clear-answers action.
 - **Declarative journeys:** YAML rules for branching, with build-time checks for invalid routes and unsupported conditions.
-- **Optional encrypted export:** encrypt the complete generated site, unlock it in the browser and keep the publishing passphrase out of deployed files.
+- **Encrypted publishing by default:** the GitHub Pages workflow encrypts the complete generated site, with an explicit opt-out for public plaintext publishing.
 - **Research scenarios:** shareable, allowlisted scenario IDs with invented answers and predictable reset behaviour.
 - **Static deployment:** clean page URLs, one base-path helper, and a GitHub Actions workflow for repository sites and root/custom domains.
 - **Checks:** TypeScript, Vitest, Playwright, axe checks, root/subpath coverage and opt-in visual comparisons.
@@ -54,6 +54,23 @@ npm run dev
 Open **[localhost:8080](http://localhost:8080)**. The home page links to the starter journey and the fictional research scenarios.
 
 To start your own project, create a repository from this one using GitHub's template feature if enabled, or copy/fork it and update the Git remote. There is no `npm create` generator yet.
+
+### Enable encrypted publishing
+
+**GitHub Pages publishing is encrypted by default.** Local development stays simple: `npm run dev` and `npm run build` still generate the ordinary plaintext prototype locally.
+
+Before the first deployment:
+
+1. Open your repository's **Settings → Secrets and variables → Actions → Secrets**.
+2. Choose **New repository secret**, name it `ENCRYPTION_PASSPHRASE`, and enter a long, unique, randomly generated passphrase of **at least 20 characters**. Do not put this passphrase in source code, site.yaml, a URL or a repository variable.
+3. Under **Settings → Pages → Build and deployment**, select **GitHub Actions**.
+4. Push to `main`, or run **Deploy GitHub Pages** from the Actions tab. Share the passphrase separately with your research participants.
+
+No publishing-mode variable is required. If `PROTOTYPE_PUBLISH_MODE` already exists, set it to `encrypted` or delete it to use the default. A missing/short secret stops deployment; plaintext is never used as a fallback. Failed deployment does not remove any version already published.
+
+To build an encrypted export on your own computer, run `npm run build:encrypted`; it prompts for the passphrase with input hidden. Publish only `_encrypted/`. See the [encrypted export guide](docs/encrypted-export.md) for previews, limitations and the threat model.
+
+To **deliberately publish a public, unencrypted prototype**, add an Actions repository **variable** named `PROTOTYPE_PUBLISH_MODE` with value `static`. This uploads readable `_site/` output; the convenience gate does not protect it. Setting `encrypted` explicitly is also supported.
 
 ### Make your first change
 
@@ -240,14 +257,15 @@ Use fictional answers only. Local storage is a convenience for resuming a protot
 
 ## Publish to GitHub Pages
 
-1. Push your prototype to a GitHub repository with `main` as the deployment branch.
-2. In **Settings → Pages → Build and deployment**, select **GitHub Actions**. Ensure Actions are enabled for the repository.
-3. Push to `main`, or manually run **Deploy GitHub Pages** from the Actions tab.
-4. Open the URL reported by the deployment job. A local build alone does not publish a site.
+1. Use a GitHub repository with `main` as the deployment branch.
+2. Add the Actions repository secret `ENCRYPTION_PASSPHRASE` as described in [enable encrypted publishing](#enable-encrypted-publishing).
+3. In **Settings → Pages → Build and deployment**, select **GitHub Actions**. Ensure Actions are enabled.
+4. Push to `main`, or manually run **Deploy GitHub Pages** from the Actions tab.
+5. Open the URL reported by the deployment job and unlock it with your passphrase. A local build alone does not publish a site.
 
 For this repository, the project-site URL would normally be `https://doideaco.github.io/GOV.UK-Static-Prototype-Kit/` once Pages is enabled and deployment succeeds. This is a destination example, not a claim that the site is already live.
 
-The [deployment workflow](.github/workflows/deploy-pages.yml) installs locked dependencies, asks GitHub for the Pages base path, builds `_site/`, uploads that folder and deploys it. It requests `contents: read`, `pages: write` and `id-token: write`. The separate [checks workflow](.github/workflows/ci.yml) verifies the kit on pushes and pull requests; deployment does not currently wait on that workflow, so configure branch protection if checks must gate releases.
+The [deployment workflow](.github/workflows/deploy-pages.yml) installs locked dependencies, asks GitHub for the Pages base path, builds and encrypts the prototype, uploads only `_encrypted/` and deploys it. An explicit `PROTOTYPE_PUBLISH_MODE=static` opt-out instead publishes `_site/`. It requests `contents: read`, `pages: write` and `id-token: write`. The separate [checks workflow](.github/workflows/ci.yml) verifies the kit on pushes and pull requests; deployment does not currently wait on that workflow, so configure branch protection if checks must gate releases.
 
 After editing an existing checkout:
 
@@ -286,9 +304,9 @@ This is intentionally a public demo passphrase. Entry is remembered in session s
 
 **The passphrase, HTML, scripts, assets and fictional scenario data are still recoverable by anyone with the URL.** Visitors can bypass the gate or forge the browser marker. A private source repository does not by itself make a publicly published Pages site private. Do not store actual secrets in frontend configuration or GitHub's public build artefacts.
 
-### Optional: encrypted static export
+### Default: encrypted publishing
 
-Encrypted publishing is now available. It protects the generated pages, embedded scenarios, scripts, styles and custom assets inside one authenticated encrypted payload. Public routes show a generic GOV.UK unlock screen; the browser decrypts the content after entry. No raw passphrase or decryption key is included in the deployment.
+GitHub Pages publishing uses encryption by default. It protects the generated pages, embedded scenarios, scripts, styles and custom assets inside one authenticated encrypted payload. Public routes show a generic GOV.UK unlock screen; the browser decrypts the content after entry. No raw passphrase or decryption key is included in the deployment.
 
 ```sh
 npm run build:encrypted
@@ -297,7 +315,7 @@ npm run preview:encrypted
 
 The build prompts for a strong, unique passphrase with input hidden (minimum 20 characters). Publish **only `_encrypted/`**. Ordinary development and `npm run build` still use plaintext `_site/` locally.
 
-For GitHub Pages, add the Actions repository variable `PROTOTYPE_PUBLISH_MODE=encrypted` and an Actions secret named `ENCRYPTION_PASSPHRASE`, then run the existing deployment workflow. Missing/short credentials fail the encrypted deployment; it does not fall back to plaintext. The default publishing mode remains `static`, so protect settings changes that could switch it back.
+For GitHub Pages, add an Actions repository secret named `ENCRYPTION_PASSPHRASE`, then run the deployment workflow. No mode variable is needed: the default is `encrypted`. Missing/short credentials stop deployment without a plaintext fallback. Only an explicit Actions variable `PROTOTYPE_PUBLISH_MODE=static` selects public plaintext output; review changes to that setting.
 
 Unlocking is remembered in sessionStorage for the current tab using a derived decryption key. **Lock prototype** clears that key and the prototype's fictional answers, even when `storage: local` is enabled. Answer storage remains separate and unencrypted; see [saved answers and encrypted publishing](#saved-answers-and-encrypted-publishing-are-separate). The key is itself an access credential; untrusted scripts on the same origin can endanger it.
 
@@ -371,7 +389,7 @@ tests/e2e/             Journey, control, gate, accessibility and visual tests
 docs/                  Architecture, encrypted publishing guide and README imagery
 .github/workflows/     Checks and GitHub Pages deployment
 _site/                 Generated plaintext output; ignored by Git
-_encrypted/            Optional encrypted publishing output; ignored by Git
+_encrypted/            Default Pages publishing output; ignored by Git
 ```
 
 ## Implementation and next steps
@@ -385,12 +403,13 @@ The initial implementation follows four stages:
 | Research tools | Fictional scenario URLs and the optional, explicitly bypassable demo gate. |
 | Release foundation | Authoring/security documentation, architecture decisions, pinned dependencies, automated checks and visual baselines. |
 
-Encrypted export is an additional publishing mode with complete-file encryption, a generic unlock screen, tab-session unlocking, a lock action, CI-secret support and dedicated browser tests. See its [implementation and limitations](docs/encrypted-export.md).
+Encrypted export is the default GitHub Pages publishing mode with complete-file encryption, a generic unlock screen, tab-session unlocking, a lock action, CI-secret support and dedicated browser tests. See its [implementation and limitations](docs/encrypted-export.md).
 
 Useful next work includes making change-answer return routes fully configurable, broadening validation beyond required fields, and establishing reviewed Linux visual baselines for CI. These are future improvements, not capabilities claimed by the current kit.
 
 ## Troubleshooting
 
+- **Deployment fails because an encryption credential is missing:** add `ENCRYPTION_PASSPHRASE` under Actions repository secrets (minimum 20 characters), then rerun deployment. Do not set it as a variable or commit it.
 - **A page or its styles returns 404 after deployment:** check that `BASE_PATH` matches the hosted path, use the `url` filter, and run the local URL checker with that same base.
 - **A form does not save or navigate:** ensure JavaScript is enabled, the form has `data-journey`, its controls have names, and the page's permalink appears in the journey configuration.
 - **A scenario seems to have disappeared:** it applies once and removes the URL parameter. Reopen its scenario URL to deliberately reapply it, or clear answers to start fresh.

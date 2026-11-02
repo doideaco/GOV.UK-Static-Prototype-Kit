@@ -1,6 +1,6 @@
 # Encrypted static export
 
-Encrypted publishing is an optional build mode for small, fictional prototypes. Local development still uses the ordinary Eleventy site. The publishing build encrypts all generated files and outputs a separate `_encrypted/` folder.
+Encrypted publishing is the default GitHub Pages publishing mode for small, fictional prototypes. Local encrypted export is available through `npm run build:encrypted`. Local development still uses the ordinary Eleventy site. The publishing build encrypts all generated files and outputs a separate `_encrypted/` folder.
 
 This implementation uses the pinned [StatiCrypt](https://github.com/robinmoisson/staticrypt) package for password derivation and authenticated encryption. It does not treat a client-side password comparison as protection.
 
@@ -29,13 +29,13 @@ BASE_PATH=/GOV.UK-Static-Prototype-Kit/ npm run build:encrypted
 
 In **Settings → Secrets and variables → Actions**:
 
-1. Add a repository **variable** named `PROTOTYPE_PUBLISH_MODE` with value `encrypted`.
-2. Add a repository **secret** named `ENCRYPTION_PASSPHRASE` with a strong, unique passphrase of at least 20 characters.
-3. Enable GitHub Pages with **GitHub Actions** as the source, then run **Deploy GitHub Pages** or push to `main`.
+1. In the **Secrets** tab, choose **New repository secret**. Name it `ENCRYPTION_PASSPHRASE` and use a strong, unique, randomly generated passphrase of at least 20 characters. Do not use a repository variable for the secret.
+2. No `PROTOTYPE_PUBLISH_MODE` variable is required: publishing defaults to `encrypted`. If a mode variable already exists, delete it or set it to `encrypted`.
+3. Enable GitHub Pages with **GitHub Actions** as the source, then run **Deploy GitHub Pages** or push to `main`. Share the passphrase separately with participants.
 
 The deployment workflow builds with the Pages base path and uploads `_encrypted/` only. Missing/short credentials or an invalid mode stop deployment. The passphrase is supplied to the encryption process through the environment and is not written into the published files. Tests use a fresh random throwaway credential; CI does not need the deployment secret to run them.
 
-The default mode remains `static` for existing users. Removing the mode variable or setting it to `static` deliberately returns to publishing plaintext `_site/`; protect repository settings and review publishing changes. Rotating a passphrase requires changing the secret and rebuilding. Each build generates a fresh salt, so remembered unlock keys stop working on the new build.
+The default mode is `encrypted`. Deleting the mode variable keeps encrypted publishing. To deliberately opt out, set the Actions repository variable `PROTOTYPE_PUBLISH_MODE=static`; this publishes plaintext `_site/`. Existing explicit `static` variables continue to opt out, so review them when upgrading. Protect repository settings and review publishing changes. Missing/short credentials stop the new deployment; they do not remove or protect a version already live. Rotating a passphrase requires changing the secret and rebuilding. Each build generates a fresh salt, so remembered unlock keys stop working on the new build.
 
 **This public kit repository contains its sample prototype in plaintext. Encrypting its deployment does not make the already-public source or screenshots secret.** Use a separate private source repository for designs whose content you intend to withhold. Review the complete Git history, releases, pull requests, Actions logs, artefacts and previous deployments for prior disclosures. Do not change this kit repository's visibility to work around that limitation.
 

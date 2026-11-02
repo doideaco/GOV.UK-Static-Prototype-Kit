@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Default GitHub Pages publishing to encrypted output, with an explicit static opt-out and failure before building when credentials are absent.
+- Upload the directory selected by the successful publishing build.
+- Put encryption setup and upgrade instructions near the top of the README.
+
 ## 1.1.0
 
 - Add optional complete-site encryption using pinned StatiCrypt primitives, a GOV.UK unlock screen, session unlock keys and a lock action.
