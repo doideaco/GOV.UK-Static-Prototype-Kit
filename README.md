@@ -9,7 +9,7 @@ Build multi-page journeys with Eleventy, Nunjucks and official GOV.UK Frontend c
 [![Checks](https://github.com/doideaco/GOV.UK-Static-Prototype-Kit/actions/workflows/ci.yml/badge.svg)](https://github.com/doideaco/GOV.UK-Static-Prototype-Kit/actions/workflows/ci.yml)
 [![Licence: MIT](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE)
 
-[Get started](#get-started) · [How it works](#how-it-works) · [Author a journey](#author-a-journey) · [Publish](#publish-to-github-pages) · [Security](#sharing-and-security)
+[Designer guide](docs/designers/README.md) · [Get started](#get-started) · [How it works](#how-it-works) · [Author a journey](#author-a-journey) · [Publish](#publish-to-github-pages) · [Security](#sharing-and-security)
 
 </div>
 
@@ -41,6 +41,8 @@ Initially oriented towards Defra service teams, the starter is intended for desi
 This is a working starter repository. It is not a drop-in replacement for the Express-based GOV.UK Prototype Kit, a migration tool for existing prototypes, or a foundation for production application processing.
 
 ## Get started
+
+**New to code prototyping? Start with the [designer guide](docs/designers/README.md).** It walks through running the kit, changing content, adding a question, preparing research scenarios and sharing an encrypted prototype.
 
 Use **Node.js 24** for the same version as CI. The package requires Node.js 22 or later.
 
