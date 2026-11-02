@@ -1,0 +1,12 @@
+---
+layout: layouts/service.njk
+title: What should we call you?
+permalink: /routing/standard/
+back: /routing/
+---
+{% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+<form action="{{ '/routing/yes/' | url }}">
+  {{ govukInput({id:'routing-example-name',name:'routing-example-name',label:{text:'What should we call you?',isPageHeading:true,classes:'govuk-label--l'},hint:{text:'Enter a fictional name for this routing example.'},attributes:{'data-required':'Enter a fictional name'} }) }}
+  {{ govukButton({text:'Continue'}) }}
+</form>

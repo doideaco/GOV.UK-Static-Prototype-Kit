@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import { createRequire } from 'node:module';
 import YAML from 'yaml';
 import { validateJourneys, url } from './rules.mjs';
+import { compileFormRouting } from './form-routing.mjs';
 // Use Eleventy's engine instance so imported macros share its SafeString type.
 const require = createRequire(import.meta.url);
 const nunjucks = require(require.resolve('nunjucks', { paths: [require.resolve('@11ty/eleventy')] }));
@@ -22,7 +23,7 @@ function configuration(base) {
   if (new Set(routes).size !== routes.length) throw Error('Duplicate page permalinks');
   validateJourneys(journeys, routes);
   for (const scenario of Object.values(scenarios)) if (!routes.includes(scenario.start)) throw Error('Unknown scenario start');
-  return { site, journeys, scenarios, base, development: process.env.NODE_ENV !== 'production' };
+  return { site, journeys, scenarios, base, routes, development: process.env.NODE_ENV !== 'production' };
 }
 export default function(eleventy) {
   const base = process.env.BASE_PATH || '/';
@@ -40,5 +41,9 @@ export default function(eleventy) {
   eleventy.setLibrary('njk', env);
   eleventy.addPassthroughCopy({ 'node_modules/govuk-frontend/dist/govuk/assets': 'assets', 'build': 'assets' });
   eleventy.addWatchTarget('src/data');
+  eleventy.addTransform('form-routing', function(content) {
+    if (!this.outputPath?.endsWith('.html')) return content;
+    return compileFormRouting(content,{...manifest,route:this.page.url});
+  });
   return { dir: { input: 'src/pages', includes: '../_includes', output: '_site' }, htmlTemplateEngine: 'njk' };
 }

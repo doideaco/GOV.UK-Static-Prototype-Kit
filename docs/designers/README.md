@@ -11,6 +11,7 @@ You do not need to understand the whole codebase. Start with the sample journey,
 | I want to… | Read |
 | --- | --- |
 | Get the kit running and change my first page | [Your first prototype](getting-started.md) |
+| Choose standard, inline-radio or YAML routing | [Choose your form routing](routing-and-forms.md) |
 | Add a question, connect pages or change a branch | [Build and edit a journey](building-a-journey.md) |
 | Prepare scenarios, choose answer storage or share with participants | [Research and sharing](research-and-sharing.md) |
 | Understand the architecture or run the full technical checks | [Main README](../../README.md) |

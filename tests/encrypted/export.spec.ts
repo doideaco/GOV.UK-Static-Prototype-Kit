@@ -62,3 +62,15 @@ test('without JavaScript the prototype remains ciphertext',async({browser})=>{
  const context=await browser.newContext({javaScriptEnabled:false});const page=await context.newPage();await page.goto('http://localhost:8082'+base+'example/name/');
  await expect(page.getByText('JavaScript is required to decrypt this prototype.',{exact:false})).toBeVisible();await expect(page.getByLabel('Passphrase',{exact:true})).toBeDisabled();await expect(page.getByRole('heading',{name:'What is your name?'})).toHaveCount(0);await context.close();
 });
+
+test('optional form and radio routing works after decryption at a repository subpath',async({page})=>{
+ await page.goto(base+'routing/standard/');await unlock(page);
+ await page.getByLabel('What should we call you?').fill('Encrypted routing example');await page.getByRole('button',{name:'Continue'}).click();
+ await expect(page.locator('[data-answer="routing-example-name"]')).toHaveText('Encrypted routing example');
+ await page.goto(base+'routing/navigation/');await page.getByRole('button',{name:'Continue'}).click();await expect(page.locator('.govuk-error-summary')).toBeFocused();
+ await page.getByLabel('The no route').check();await page.getByRole('button',{name:'Continue'}).click();await expect(page.getByRole('heading',{name:'You reached the no route'})).toBeVisible();
+ expect(await page.evaluate(()=>JSON.parse(sessionStorage.getItem('govuk-static-kit:countryside-visit:v1') || '{}'))).not.toHaveProperty('redirect');
+ await page.goto(base+'routing/answer/');await page.getByLabel('Yes',{exact:true}).check();await page.getByRole('button',{name:'Continue'}).click();
+ await expect(page.locator('[data-answer="routing-example-answer"]')).toHaveText('yes');
+ await page.goto(base+'routing/answer/');await expect(page.getByLabel('Yes',{exact:true})).toBeChecked();
+});

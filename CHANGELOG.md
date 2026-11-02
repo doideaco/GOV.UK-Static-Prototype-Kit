@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Add optional standard form-action and inline radio routing, with navigation-only `redirect` groups and answer-preserving `data-next` attributes.
+- Validate rendered form destinations, conflicting routing sources and missing option routes during the build; retain existing YAML journeys.
+- Add working routing examples, automatic inline selection validation and ordinary/encrypted browser coverage.
+
 - Default GitHub Pages publishing to encrypted output, with an explicit static opt-out and failure before building when credentials are absent.
 - Upload the directory selected by the successful publishing build.
 - Put encryption setup and upgrade instructions near the top of the README.

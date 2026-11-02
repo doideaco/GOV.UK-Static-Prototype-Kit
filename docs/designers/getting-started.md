@@ -2,6 +2,8 @@
 
 [Designer guide](README.md) · Next: [Build and edit a journey](building-a-journey.md)
 
+To compare ordinary form actions, optional radio routes and the existing YAML approach, see [Choose your form routing](routing-and-forms.md).
+
 The quickest way to learn the kit is to run the example, change a heading and try the journey again. Leave route names and answer names alone for this first exercise.
 
 ## Before you start

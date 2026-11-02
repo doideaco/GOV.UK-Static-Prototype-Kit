@@ -2,9 +2,9 @@ import { initAll } from 'govuk-frontend';
 import { createStore } from './storage';
 import { serialize, restore } from './forms';
 // @ts-expect-error Shared, tested build/browser rule evaluator.
-import { destination, matches, url } from '../../../tooling/rules.mjs';
+import { resolveFormDestination, matches, url } from '../../../tooling/rules.mjs';
 const config = JSON.parse(document.querySelector('#prototype-config')!.textContent!);
-const { site, base, journeys, scenarios } = config;
+const { site, base, scenarios } = config;
 const key = `govuk-static-kit:${site.prototypeId}:v${site.schemaVersion}`;
 let storage: Storage;
 try { storage = site.storage === 'local' ? localStorage : sessionStorage; } catch { storage = {} as Storage; }
@@ -24,20 +24,24 @@ function start() {
  const answers = store.read();
  document.querySelectorAll<HTMLElement>('[data-answer]').forEach(el => { const value = answers[el.dataset.answer!]; el.textContent = Array.isArray(value) ? value.join(', ') || 'Not provided' : value || 'Not provided'; });
  document.querySelectorAll<HTMLElement>('[data-show-when]').forEach(el => { try { el.hidden = !matches(JSON.parse(el.dataset.showWhen!), answers); } catch { el.hidden = true; } });
- document.querySelectorAll<HTMLFormElement>('form[data-journey]').forEach(form => {
-  restore(form, answers);
+ document.querySelectorAll<HTMLFormElement>('form[data-prototype-routing]').forEach(form => {
+  const plan = JSON.parse(form.dataset.prototypeRouting!);
+  const restored = {...answers};
+  if (plan.navigationOnly) delete restored[plan.field];
+  restore(form, restored);
   form.addEventListener('submit', event => {
    event.preventDefault();
    const values = serialize(form), errors: { id: string; message: string }[] = [];
    form.querySelectorAll('[data-validation-error]').forEach(e => e.remove());
    form.querySelectorAll('.govuk-form-group--error').forEach(e => e.classList.remove('govuk-form-group--error'));
    form.querySelectorAll('[aria-invalid]').forEach(e => { e.removeAttribute('aria-invalid'); const ids = (e.getAttribute('aria-describedby') || '').split(' ').filter(x => !x.endsWith('-validation-error')); if (ids.length) e.setAttribute('aria-describedby', ids.join(' ')); else e.removeAttribute('aria-describedby'); });
-   form.querySelectorAll<HTMLInputElement>('[data-required]').forEach(el => {
+   form.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>('[data-required]').forEach(el => {
+    if (el.disabled) return;
     if (!values[el.name] || Array.isArray(values[el.name]) && !values[el.name].length) {
      const message = el.dataset.required!, id = el.id + '-validation-error'; errors.push({ id: el.id, message });
      el.closest('.govuk-form-group')?.classList.add('govuk-form-group--error');
      const error = document.createElement('p'); error.id = id; error.dataset.validationError = ''; error.className = 'govuk-error-message'; error.textContent = message; el.before(error);
-     const controls = Array.from(form.elements).filter((e): e is HTMLInputElement => e instanceof HTMLInputElement && e.name === el.name);
+     const controls = Array.from(form.elements).filter((e): e is HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement => (e instanceof HTMLInputElement || e instanceof HTMLSelectElement || e instanceof HTMLTextAreaElement) && e.name === el.name);
      controls.forEach(e => { e.setAttribute('aria-invalid','true'); e.setAttribute('aria-describedby', ((e.getAttribute('aria-describedby') || '') + ' ' + id).trim()); });
     }
    });
@@ -49,9 +53,11 @@ function start() {
     errors.forEach(error => { const li = document.createElement('li'), link = document.createElement('a'); link.href = '#' + error.id; link.textContent = error.message; link.onclick = () => document.getElementById(error.id)?.focus(); li.append(link); list.append(li); });
     summary.append(list); container.append(summary); summary.focus(); return;
    }
-   const merged = { ...store.read(), ...values }; store.write(merged);
-   const step = Object.values(journeys).flatMap((j: any) => j.steps).find((s: any) => s.path === route);
-   const next = destination(step, merged);
+   const merged = { ...store.read(), ...values };
+   if (plan.navigationOnly) delete merged[plan.field];
+   const next = resolveFormDestination(plan, values, merged);
+   if (!next) return;
+   store.write(merged);
    // Return destinations are an allowlist, never arbitrary URL input. Recheck eligibility after edits.
    const target = params.get('return') === 'check-answers' && merged.eligible === 'yes' ? '/example/check-answers/' : next;
    if (target) location.assign(url(target, base));

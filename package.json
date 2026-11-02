@@ -26,6 +26,7 @@
     "@11ty/eleventy": "3.1.7",
     "govuk-frontend": "6.6.0",
     "nunjucks": "3.2.4",
+    "parse5": "8.1.0",
     "yaml": "2.9.1"
   },
   "devDependencies": {

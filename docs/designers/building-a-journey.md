@@ -2,7 +2,9 @@
 
 [Designer guide](README.md) · Previous: [Your first prototype](getting-started.md) · Next: [Research and sharing](research-and-sharing.md)
 
-Start with the existing example and add one question. This exercise keeps the `/example/` routes and existing answer names, which avoids changing the sample's return and reset logic.
+For simple next pages and branches, you can also use [ordinary form actions or optional inline radio routing](routing-and-forms.md), with no YAML entry on those pages.
+
+This walkthrough keeps the existing YAML approach. Start with the existing example and add one question. This exercise keeps the `/example/` routes and existing answer names, which avoids changing the sample's return and reset logic.
 
 ## Understand a question page
 
@@ -71,7 +73,7 @@ back: /example/name/
 </form>
 ```
 
-The form wrapper saves answers and handles navigation. `data-errors` provides a place for the error summary. Preserve both when copying a question page.
+The form wrapper saves answers and handles navigation. `data-errors` provides a place for the error summary; the build adds it if missing. Keep `data-journey` for this YAML-based exercise. With a standard local form action or inline routing radios, that attribute is optional.
 
 ### 2. Connect it to the journey
 

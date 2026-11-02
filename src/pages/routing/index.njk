@@ -1,0 +1,14 @@
+---
+layout: layouts/service.njk
+title: Routing examples
+permalink: /routing/
+---
+<h1 class="govuk-heading-l">Choose how to route your forms</h1>
+<p class="govuk-body">These examples use the same official GOV.UK components. Pick the authoring style that suits your journey.</p>
+<ul class="govuk-list govuk-list--bullet">
+  <li><a class="govuk-link" href="{{ '/routing/standard/' | url }}">Standard form action</a> — save an answer and continue to a fixed next page.</li>
+  <li><a class="govuk-link" href="{{ '/routing/navigation/' | url }}">Navigation radios</a> — use each option’s URL as its destination.</li>
+  <li><a class="govuk-link" href="{{ '/routing/answer/' | url }}">Answer-preserving radio routes</a> — save yes or no and route from the option.</li>
+  <li><a class="govuk-link" href="{{ '/example/start/' | url }}">Existing YAML journey</a> — keep routing conditions in the journey file.</li>
+</ul>
+<p class="govuk-body">The page-authored examples do not need entries in journeys.yaml. Routing happens when you select Continue.</p>

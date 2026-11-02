@@ -1,0 +1,15 @@
+---
+layout: layouts/service.njk
+title: Where do you want to go?
+permalink: /routing/navigation/
+back: /routing/
+---
+{% from "govuk/components/radios/macro.njk" import govukRadios %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+<form>
+  {{ govukRadios({name:'redirect',fieldset:{legend:{text:'Where do you want to go?',isPageHeading:true,classes:'govuk-fieldset__legend--l'} },items:[
+    {text:'The yes route',value:'/routing/yes/'},
+    {text:'The no route',value:'/routing/no/'}
+  ]}) }}
+  {{ govukButton({text:'Continue'}) }}
+</form>

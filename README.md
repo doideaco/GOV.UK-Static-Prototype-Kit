@@ -32,7 +32,7 @@ Initially oriented towards Defra service teams, the starter is intended for desi
 - **Official GOV.UK Frontend:** npm-provided Nunjucks macros, styles, fonts, images and JavaScript. Components are not copied or reimplemented.
 - **An editable starter service:** start → name → eligibility → check your answers → confirmation, with an ineligible branch and change-answer links.
 - **Browser answers:** session storage by default, optional local storage, form restoration and a clear-answers action.
-- **Declarative journeys:** YAML rules for branching, with build-time checks for invalid routes and unsupported conditions.
+- **Optional routing styles:** ordinary form actions, navigation radios, answer-preserving `data-next` branches, or existing YAML journey rules. The build checks destinations and conflicts.
 - **Encrypted publishing by default:** the GitHub Pages workflow encrypts the complete generated site, with an explicit opt-out for public plaintext publishing.
 - **Research scenarios:** shareable, allowlisted scenario IDs with invented answers and predictable reset behaviour.
 - **Static deployment:** clean page URLs, one base-path helper, and a GitHub Actions workflow for repository sites and root/custom domains.
@@ -150,6 +150,19 @@ Create the review page too, then register both routes in the journey configurati
 
 ### 2. Connect the steps
 
+Choose the routing style that fits each page:
+
+| Style | Authoring | Saved answer |
+| --- | --- | --- |
+| Standard form action | `<form action="{{ '/next-page/' | url }}">` | Named controls are saved and restored. |
+| Navigation radios | Radio group `name: 'redirect'`; each `value` is a local destination. | The routing choice is not saved; other fields are. |
+| Answer-preserving radio routes | Normal name/value plus `attributes: {'data-next': '/next-page/'}` on options. | Clean answer values such as `yes` or `no` are saved and restored. |
+| YAML journey | Keep next steps and conditions in `src/data/journeys.yaml`. | Existing behaviour is preserved. |
+
+Standard and inline forms do not need a YAML step or `data-journey` attribute. Add a normal form action for the default next page, or give radio options destinations. All approaches navigate on submission, work under repository subpaths and support encrypted export. Try `/routing/` locally or read the [designer's routing guide](docs/designers/routing-and-forms.md) for complete examples.
+
+Inline routing is optional. A form's inline radios cannot also have a page-level YAML `next` rule; the build reports a conflict instead of choosing silently. A YAML form may retain an action matching one of its YAML destinations as a fallback. Use `data-native` to leave a form entirely outside the kit's saving, validation and routing.
+
 `src/data/journeys.yaml` declares routes and next steps. A simple step has a string destination; a branching step has ordered conditions and a final `otherwise` destination.
 
 ```yaml
@@ -203,7 +216,7 @@ Bindings and conditions are refreshed on page load, rather than acting as a reac
 | Repeated text inputs with the same name | An ordered array of values. |
 | Disabled, file and password controls | Excluded from saved answers. |
 
-Add `data-required="Your error message"` to a required control, or the first radio in a required group. Include `<div data-errors></div>` in the form. Validation provides inline errors, links to affected controls and focus on an error summary. The starter implements required-field checks; add explicit validation and tests for more complex constraints.
+Add `data-required="Your error message"` to a required control, or the first radio in a required group. Inline routing radios automatically require selection and use “Select an option” unless you provide a message. The build adds `<div data-errors></div>` if the form does not already have one. Validation provides inline errors, links to affected controls and focus on an error summary. The starter implements required-field checks; add explicit validation and tests for more complex constraints.
 
 The sample check-your-answers page uses `?return=check-answers` on change links. This is an allowlisted return destination in the starter runtime, not an arbitrary redirect URL. Editing eligibility to “No” follows the ineligible branch. Adapt this sample-specific return logic when creating another service. Visible back links have explicit destinations; normal browser history remains available.
 
@@ -364,7 +377,7 @@ npm run build
 npm run test:visual
 ```
 
-**Stop any development or preview server first**, so Playwright can start a test server with the correct base path. Subpath and gate suites leave their specialised output in `_site/`; the final normal build restores the default root-path, ungated configuration.
+**Stop any development or preview server first** while running build-changing suites: they reuse `_site/` and temporarily replace its output. Browser tests use a dedicated server on port 8081 (encrypted tests use 8082), so they never reuse an unrelated development server. Subpath and gate suites leave their specialised output in `_site/`; the final normal build restores the default root-path, ungated configuration.
 
 Gate and visual cases are intentionally skipped by the ordinary e2e command and run through their dedicated commands. The supplied visual baselines are for macOS Chromium. On another platform, create and review baselines with `npm run test:visual -- --update-snapshots`. Screenshot comparisons are opt-in and do not run in the Linux CI workflow yet.
 
@@ -413,9 +426,9 @@ Useful next work includes making change-answer return routes fully configurable,
 
 - **Deployment fails because an encryption credential is missing:** add `ENCRYPTION_PASSPHRASE` under Actions repository secrets (minimum 20 characters), then rerun deployment. Do not set it as a variable or commit it.
 - **A page or its styles returns 404 after deployment:** check that `BASE_PATH` matches the hosted path, use the `url` filter, and run the local URL checker with that same base.
-- **A form does not save or navigate:** ensure JavaScript is enabled, the form has `data-journey`, its controls have names, and the page's permalink appears in the journey configuration.
+- **A form does not save or navigate:** ensure JavaScript is enabled, the form has a valid local action, inline routing radios or `data-journey` with a YAML next rule. Check that controls have names and that the form is not marked `data-native`.
 - **A scenario seems to have disappeared:** it applies once and removes the URL parameter. Reopen its scenario URL to deliberately reapply it, or clear answers to start fresh.
-- **Browser tests fail while development is running:** stop the server on port 8080; the test suite needs to serve its own root/subpath build.
+- **Browser tests fail while development is running:** stop development while the suite rebuilds shared output, and check ports 8081/8082 are free for the dedicated test servers.
 - **An upstream component looks different:** inspect the pinned GOV.UK Frontend version and review the screenshot differences before updating baselines.
 
 ## Licence and attribution

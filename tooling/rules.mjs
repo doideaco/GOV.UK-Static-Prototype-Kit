@@ -34,3 +34,8 @@ export function validateJourneys(journeys, routes) {
   }
 }
 export function url(path, base = '/') { return `${base.replace(/\/$/, '')}/${path.replace(/^\//, '')}`; }
+
+export function resolveFormDestination(plan, submitted, answers) {
+  if (plan.mode === 'inline') return plan.choices.find(choice => choice.value === submitted[plan.field])?.next;
+  return destination({next:plan.next}, answers);
+}

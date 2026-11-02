@@ -1,0 +1,15 @@
+---
+layout: layouts/service.njk
+title: Would you like to continue?
+permalink: /routing/answer/
+back: /routing/
+---
+{% from "govuk/components/radios/macro.njk" import govukRadios %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+<form>
+  {{ govukRadios({name:'routing-example-answer',fieldset:{legend:{text:'Would you like to continue?',isPageHeading:true,classes:'govuk-fieldset__legend--l'} },items:[
+    {text:'Yes',value:'yes',attributes:{'data-next':'/routing/yes/'} },
+    {text:'No',value:'no',attributes:{'data-next':'/routing/no/'} }
+  ]}) }}
+  {{ govukButton({text:'Continue'}) }}
+</form>
