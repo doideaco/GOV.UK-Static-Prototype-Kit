@@ -59,7 +59,7 @@ test('scenario deep links and ciphertext corruption',async({page})=>{
  await page.reload();await unlock(page);await expect(page.locator('#unlock-error')).toBeVisible();await expect(page.getByRole('heading',{name:'You cannot use this service'})).toHaveCount(0);
 });
 test('without JavaScript the prototype remains ciphertext',async({browser})=>{
- const context=await browser.newContext({javaScriptEnabled:false});const page=await context.newPage();await page.goto('http://localhost:8082'+base+'example/name/');
+ const context=await browser.newContext({javaScriptEnabled:false});const page=await context.newPage();await page.goto(String(test.info().project.use.baseURL)+base+'example/name/');
  await expect(page.getByText('JavaScript is required to decrypt this prototype.',{exact:false})).toBeVisible();await expect(page.getByLabel('Passphrase',{exact:true})).toBeDisabled();await expect(page.getByRole('heading',{name:'What is your name?'})).toHaveCount(0);await context.close();
 });
 
@@ -73,4 +73,28 @@ test('optional form and radio routing works after decryption at a repository sub
  await page.goto(base+'routing/answer/');await page.getByLabel('Yes',{exact:true}).check();await page.getByRole('button',{name:'Continue'}).click();
  await expect(page.locator('[data-answer="routing-example-answer"]')).toHaveText('yes');
  await page.goto(base+'routing/answer/');await expect(page.getByLabel('Yes',{exact:true})).toBeChecked();
+});
+
+
+test('unlocked navigation keeps the document and works without network requests',async({page})=>{
+ await page.goto(base+'example/name/');await unlock(page);
+ await expect(page.getByLabel('What is your name?')).toBeVisible();
+ await page.evaluate(()=>{(window as any).navigationSentinel='same document';});
+ const requests:string[]=[];
+ await page.route('**/*',route=>{requests.push(route.request().url());return route.abort();});
+ await page.getByLabel('What is your name?').fill('Offline Example');
+ await page.getByRole('button',{name:'Continue',exact:true}).click();
+ await page.getByLabel('Yes',{exact:true}).check();await page.getByLabel('Walking',{exact:true}).check();
+ await page.getByRole('button',{name:'Continue',exact:true}).click();
+ await expect(page.locator('[data-answer="full-name"]')).toHaveText('Offline Example');
+ await page.getByRole('link',{name:'Change Name',exact:true}).click();
+ await expect(page.getByLabel('What is your name?')).toHaveValue('Offline Example');
+ await page.goBack();await expect(page.getByRole('heading',{name:'Check your answers'})).toBeFocused();
+ await page.goForward();await expect(page.getByLabel('What is your name?')).toHaveValue('Offline Example');
+ expect(await page.evaluate(()=>(window as any).navigationSentinel)).toBe('same document');
+ expect(requests).toEqual([]);
+ await page.unroute('**/*');
+ await page.getByRole('button',{name:'Lock prototype',exact:true}).click();
+ await expect(page.getByRole('heading',{name:'Unlock this prototype'})).toBeVisible();
+ await page.goBack();await expect(page.getByRole('heading',{name:'Unlock this prototype'})).toBeVisible();
 });

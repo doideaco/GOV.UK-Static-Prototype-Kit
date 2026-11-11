@@ -96,3 +96,9 @@ npm run test:encrypted
 The encrypted suite generates a random passphrase, builds at `/sample.repo/`, serves `_encrypted/` on an isolated port, and checks desktop/mobile behaviour: no plaintext prototype files, incorrect credentials, tampered ciphertext, keyboard/error focus, axe checks, styles, full journey navigation, answer editing, refresh, scenarios, locking/browser Back and disabled JavaScript. It does not print or commit the random credential.
 
 The suite leaves a test-specific build locally. Run `npm run build` afterwards to restore normal root-path output. Never deploy the test output: generate a fresh export using your own build-time credential.
+
+## Faster checks without weakening encryption
+
+Deployment waits for the same required Checks workflow used by pull requests. Its root, subpath, demo-gate and encrypted desktop/mobile suites run in parallel. Chromium downloads are cached by OS, architecture and lockfile; system dependencies are installed on each runner. Build assets are reused only after input and output hash validation. Generated site files, passphrases and derived keys are never placed in the Actions dependency cache.
+
+The unlocked archive stays in document memory during internal navigation, so following links or submitting enhanced prototype forms does not download and decrypt the payload again. Refresh and direct links still use the encrypted shell; external links, modified clicks and downloads use normal browser navigation. Lock removes the remembered key and answers and reloads. Encryption parameters, authentication checks, fresh salts and fresh IVs are unchanged.

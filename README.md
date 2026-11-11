@@ -434,3 +434,17 @@ Useful next work includes making change-answer return routes fully configurable,
 ## Licence and attribution
 
 Kit code is [MIT licensed](LICENSE). GOV.UK Frontend and other dependencies retain their own licences and usage conditions; the kit's licence does not grant rights to government branding. See [third-party notices](THIRD-PARTY-NOTICES.md) before redistributing or publishing.
+
+## Faster iteration and deployment
+
+Use `npm run dev` while presenting or editing: save content, try the journey locally, then push a complete change once. Small local edits do not need a Pages deployment. Keep the local server running between edits.
+
+A push to `main` now runs the required Checks workflow before deploying. TypeScript, unit tests and link checking run alongside four parallel browser suites: root, repository subpath, demo gate and encrypted export. Every browser suite still covers desktop and mobile. Pull requests and other branches run the same checks without deploying. A failed check blocks publication; there is no quick-publish bypass. GitHub branch protections can require the `core` and `browsers` jobs.
+
+GitHub caches npm downloads and the exact lockfile-matched Playwright Chromium installation. Linux system dependencies are still verified on every runner. Only dependencies are cached in Actions: no generated pages, decrypted archives, passwords or derived keys. Cold runs still download Chromium, and Pages provisioning can still take time; warm-run timings depend on runner availability.
+
+Within a checkout, repeated builds reuse CSS and JavaScript only when input fingerprints and output hashes match. Changes to assets, tooling, the lockfile or Node version rebuild them; altered/missing output also rebuilds. Delete `build/` to force a cold asset build. HTML, route validation, link checks and encryption still run every time. Encryption always uses fresh salts and IVs and the existing password-derivation strength.
+
+After unlocking an encrypted prototype, ordinary internal links, enhanced forms and browser Back/Forward use the decrypted archive already held in memory. Styles stay loaded and page headings receive focus. Refreshes and direct links still validate the saved tab key. Lock clears the key and answers and discards the document; the decrypted archive is never saved to localStorage or an Actions cache.
+
+If a browser-test port is occupied, choose an unused port without stopping other servers, for example `TEST_PORT=19181 npm run test:e2e` or `TEST_PORT=19182 npm run test:encrypted`.

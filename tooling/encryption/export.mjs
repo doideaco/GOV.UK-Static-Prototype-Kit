@@ -39,7 +39,7 @@ export async function exportEncrypted({passphrase, base = process.env.BASE_PATH 
   const key = await deriveKey(passphrase, salt);
   const payload = await encryptWithKey(JSON.stringify({files}), key);
   const env = new nunjucks.Environment(new nunjucks.FileSystemLoader(['tooling/encryption','node_modules/govuk-frontend/dist']), {autoescape:true});
-  const shell = env.render('unlock.njk', {root: `${base}__encrypted/`});
+  const shell = env.render('unlock.njk', {root: `${base}__encrypted/`, credentialKey: JSON.stringify(`govuk-static-kit:encrypted:${base}`)});
   // Build outside the publish folder. Replace it only when the export is complete.
   const staging = await fs.mkdtemp(path.resolve('.encrypted-stage-'));
   try {

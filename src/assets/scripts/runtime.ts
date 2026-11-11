@@ -12,12 +12,18 @@ const store = createStore(storage, key);
 const session = { get(k: string) { try { return sessionStorage.getItem(k); } catch { return null; } }, set(k: string, v: string) { try { sessionStorage.setItem(k,v); } catch {} }, remove(k: string) { try { sessionStorage.removeItem(k); } catch {} } };
 const params = new URLSearchParams(location.search);
 const route = '/' + location.pathname.slice(base.length).replace(/^\//, '');
+function navigate(destination: string, replace = false) {
+ const encryptedNavigate = (window as any).encryptedPrototypeNavigate;
+ if (encryptedNavigate) encryptedNavigate(destination, replace);
+ else if (replace) location.replace(destination);
+ else location.assign(destination);
+}
 function start() {
  if (site.resetOnStart && route === '/example/start/' && !params.has('scenario')) store.clear();
  const scenarioId = params.get('scenario');
  if (scenarioId && Object.hasOwn(scenarios, scenarioId)) {
   store.write(scenarios[scenarioId].answers); session.set(key + ':scenario', scenarioId);
-  location.replace(url(scenarios[scenarioId].start, base)); return;
+  navigate(url(scenarios[scenarioId].start, base), true); return;
  }
  const active = session.get(key + ':scenario');
  if (active && config.development) { const notice = document.querySelector<HTMLElement>('#scenario-notice')!; notice.hidden = false; notice.textContent = `Fictional scenario active: ${active}. Clear prototype answers to reset.`; }
@@ -60,7 +66,7 @@ function start() {
    store.write(merged);
    // Return destinations are an allowlist, never arbitrary URL input. Recheck eligibility after edits.
    const target = params.get('return') === 'check-answers' && merged.eligible === 'yes' ? '/example/check-answers/' : next;
-   if (target) location.assign(url(target, base));
+   if (target) navigate(url(target, base));
   });
  });
 }

@@ -5,9 +5,16 @@
 <!doctype html><html lang="en" class="govuk-template"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow"><meta name="referrer" content="no-referrer">
+<style>html.encrypted-opening #unlock-screen { display: none; }</style>
+<script>
+// Check before first paint. A saved key is a hint, not proof of access.
+try {
+  if (sessionStorage.getItem({{ credentialKey | safe }})) document.documentElement.classList.add('encrypted-opening');
+} catch (_) {}
+</script>
 <title>Unlock prototype</title><link rel="icon" href="{{ root }}assets/images/favicon.ico">
 <link rel="stylesheet" href="{{ root }}unlock.css"></head>
-<body class="govuk-template__body"><header>{{ govukHeader({productName:'Encrypted prototype'}) }}</header>
+<body class="govuk-template__body"><div id="unlock-screen"><header>{{ govukHeader({productName:'Encrypted prototype'}) }}</header>
 <div class="govuk-width-container"><main id="main-content" class="govuk-main-wrapper"><div class="govuk-grid-row"><div class="govuk-grid-column-two-thirds">
 <div id="unlock-error" class="govuk-error-summary" tabindex="-1" role="alert" hidden><h2 class="govuk-error-summary__title">There is a problem</h2><p id="unlock-error-message" class="govuk-body"></p></div>
 <h1 class="govuk-heading-l">Unlock this prototype</h1><p class="govuk-body">Enter the passphrase shared with you. This prototype is encrypted and will be decrypted in your browser.</p>
@@ -19,4 +26,5 @@
 {{ govukButton({text:'Unlock prototype',disabled:true}) }}
 <p class="govuk-body" id="unlock-status" role="status"></p>
 </form></div></div></main></div><footer>{{ govukFooter({}) }}</footer>
-<script src="{{ root }}unlock.js" data-payload="{{ root }}payload.json" defer></script></body></html>
+</div>
+<script src="{{ root }}unlock.js" data-payload="{{ root }}payload.json" onerror="document.documentElement.classList.remove('encrypted-opening')" defer></script></body></html>

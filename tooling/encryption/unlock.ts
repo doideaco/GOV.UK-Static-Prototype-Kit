@@ -38,7 +38,10 @@ function showError(message: string) {
 function decodeFile(file: FileEntry) {
   return Uint8Array.from(atob(file.data), char => char.charCodeAt(0));
 }
-function render(archive: Archive, data: Envelope) {
+const blobCache = new Map<string,string>();
+let renderVersion = 0;
+async function render(archive: Archive, data: Envelope) {
+  const version = ++renderVersion;
   const root = new URL(data.base, location.origin);
   const sourceUrl = (file: string) => new URL(file.slice(1), root);
   const findFile = (value: string, relativeTo: URL): string | undefined => {
@@ -48,7 +51,6 @@ function render(archive: Archive, data: Envelope) {
     const file = '/' + decodeURIComponent(resolved.pathname.slice(root.pathname.length));
     return Object.hasOwn(archive.files,file) ? file : undefined;
   };
-  const blobCache = new Map<string,string>();
   const building = new Set<string>();
   function rewriteCss(css: string, relativeTo: URL): string {
     // Sass normally flattens imports. These also support ordinary local CSS imports.
@@ -107,13 +109,41 @@ function render(archive: Archive, data: Envelope) {
   // Parse the prototype's namespace before replacing the unlock screen.
   let prototypeConfig: any;
   try { prototypeConfig = JSON.parse(doc.querySelector('#prototype-config')?.textContent || '{}'); } catch {}
-  const controls = doc.createElement('script');
   const settings = {base:data.base,site:prototypeConfig?.site,blobUrls:urls};
-  controls.textContent = `(${installLock.toString()})(${JSON.stringify(settings).replace(/</g,'\\u003c')});`;
-  doc.body.append(controls);
-  document.open();
-  document.write('<!doctype html>\n' + doc.documentElement.outerHTML);
-  document.close();
+  // Keep the current page painted until the next page's styles are ready.
+  for (const link of doc.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]')) {
+    if (Array.from(document.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]')).some(current => current.href === link.href)) continue;
+    const stylesheet = document.createElement('link');
+    stylesheet.rel = 'stylesheet'; stylesheet.href = link.href;
+    await new Promise<void>((resolve,reject) => {
+      stylesheet.onload = () => resolve();
+      stylesheet.onerror = () => reject(Error('Unable to load prototype styles. Reload and try again.'));
+      document.head.append(stylesheet);
+    });
+  }
+  if (version !== renderVersion) return;
+  const scripts = Array.from(doc.body.querySelectorAll('script')).filter(script => !script.type || script.type === 'text/javascript' || script.type === 'module');
+  scripts.forEach(script => script.remove());
+  document.title = doc.title;
+  document.documentElement.className = doc.documentElement.className;
+  document.body.replaceWith(document.importNode(doc.body,true));
+  installLock(settings);
+  for (const original of scripts) {
+    if (version !== renderVersion) return;
+    const script = document.createElement('script');
+    for (const attribute of original.attributes) script.setAttribute(attribute.name,attribute.value);
+    script.textContent = original.textContent;
+    if (script.src) {
+      await new Promise<void>((resolve,reject) => {
+        script.onload = () => resolve(); script.onerror = () => reject(Error('Unable to start prototype page. Reload and try again.'));
+        document.body.append(script);
+      });
+    } else document.body.append(script);
+  }
+  if (version !== renderVersion) return;
+  window.scrollTo(0,0);
+  const heading = document.querySelector<HTMLElement>('main h1');
+  if (heading) { heading.tabIndex = -1; heading.focus({preventScroll:true}); }
 }
 // Installed by the new document's parser, rather than on the document being replaced.
 function installLock(settings: {base:string;site:any;blobUrls:string[]}) {
@@ -136,6 +166,34 @@ function installLock(settings: {base:string;site:any;blobUrls:string[]}) {
   });
 }
 
+function installNavigation(archive: Archive, data: Envelope) {
+  const root = new URL(data.base, location.origin);
+  function included(target: URL) {
+    if (target.origin !== root.origin || !target.pathname.startsWith(root.pathname)) return false;
+    const path = '/' + decodeURIComponent(target.pathname.slice(root.pathname.length));
+    return !!archive.files[path.endsWith('/') ? path + 'index.html' : path];
+  }
+  async function navigate(destination: string, replace = false, pop = false) {
+    const target = new URL(destination,location.href);
+    if (!included(target)) { location.assign(target.href); return; }
+    // Locking still invalidates the in-memory journey, including history traversal.
+    try { if (!sessionStorage.getItem(sessionKey(data.base))) { location.assign(target.href); return; } } catch { location.assign(target.href); return; }
+    if (!pop) history[replace ? 'replaceState' : 'pushState'](null,'',target.href);
+    try { await render(archive,data); } catch { location.reload(); }
+  }
+  (window as any).encryptedPrototypeNavigate = navigate;
+  document.addEventListener('click',event => {
+    if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    const link = (event.target as Element).closest<HTMLAnchorElement>('a[href]');
+    if (!link || link.hasAttribute('download') || link.hasAttribute('data-native') || (link.target && link.target !== '_self')) return;
+    const target = new URL(link.href,location.href);
+    if (!included(target) || (target.pathname === location.pathname && target.search === location.search && target.hash)) return;
+    event.preventDefault();
+    void navigate(target.href);
+  });
+  window.addEventListener('popstate',()=>{void navigate(location.href,false,true);});
+}
+
 async function openWithKey(data: Envelope, key: string) {
   const result = await decryptWithKey(data.payload,key,data.salt);
   if (!result.success) return false;
@@ -143,7 +201,8 @@ async function openWithKey(data: Envelope, key: string) {
   if (!archive.files || !Object.hasOwn(archive.files,'/index.html')) throw Error('The encrypted prototype is incomplete.');
   // Cache only a successful decryption key. It is a credential, not a harmless hash.
   remember(data,key);
-  render(archive,data);
+  installNavigation(archive,data);
+  await render(archive,data);
   return true;
 }
 form.addEventListener('submit', async event => {
@@ -160,7 +219,7 @@ form.addEventListener('submit', async event => {
   finally { opening = false; button.disabled = false; status.textContent = ''; }
 });
 input.disabled = false; button.disabled = false; button.removeAttribute('aria-disabled');
-// Only the generic shell is visible while a remembered key is checked.
+// Keep the passphrase screen hidden while checking a remembered key.
 (async () => {
   try {
     const data = await envelope();
@@ -171,5 +230,6 @@ input.disabled = false; button.disabled = false; button.removeAttribute('aria-di
       forget(data.base);
     } else if (cached) forget(data.base);
   } catch { /* The form provides a focused, accessible error on explicit entry. */ }
+  document.documentElement.classList.remove('encrypted-opening');
   input.focus();
 })();

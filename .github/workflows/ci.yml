@@ -1,9 +1,14 @@
 name: Checks
-on: [push, pull_request]
+on:
+  pull_request:
+  push:
+    branches-ignore: [main]
+  workflow_dispatch:
+  workflow_call:
 permissions:
   contents: read
 jobs:
-  test:
+  core:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -11,10 +16,33 @@ jobs:
         with: {node-version: 24, cache: npm}
       - run: npm ci
       - run: npm run check
-      - run: npx playwright install --with-deps chromium
-      - run: npm run test:e2e
-      - run: npm run test:subpath
-      - run: node tooling/check-output.mjs
+  browsers:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [root, subpath, gate, encrypted]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 24, cache: npm}
+      - run: npm ci
+      - name: Cache Playwright Chromium
+        id: browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('package-lock.json') }}
+      - if: steps.browsers.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+      - if: steps.browsers.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+      - if: matrix.suite == 'root'
+        run: npm run build && npm run test:e2e
+      - if: matrix.suite == 'subpath'
+        run: npm run test:subpath && node tooling/check-output.mjs
         env: {BASE_PATH: /sample-repo/}
-      - run: npm run test:gate
-      - run: npm run test:encrypted
+      - if: matrix.suite == 'gate'
+        run: npm run test:gate
+      - if: matrix.suite == 'encrypted'
+        run: npm run test:encrypted

@@ -39,7 +39,7 @@ export default function(eleventy) {
   env.addFilter('url', p => url(p, base));
   env.addFilter('json', json);
   eleventy.setLibrary('njk', env);
-  eleventy.addPassthroughCopy({ 'node_modules/govuk-frontend/dist/govuk/assets': 'assets', 'build': 'assets' });
+  eleventy.addPassthroughCopy({ 'node_modules/govuk-frontend/dist/govuk/assets': 'assets', 'build/main.css': 'assets/main.css', 'build/runtime.js': 'assets/runtime.js' });
   eleventy.addWatchTarget('src/data');
   eleventy.addTransform('form-routing', function(content) {
     if (!this.outputPath?.endsWith('.html')) return content;
