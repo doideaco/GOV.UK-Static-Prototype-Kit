@@ -36,7 +36,7 @@
     "concurrently": "10.0.6",
     "esbuild": "0.28.2",
     "http-server": "14.1.1",
-    "sass": "1.107.0",
+    "sass": "1.108.1",
     "staticrypt": "3.5.4",
     "typescript": "7.0.2",
     "vitest": "5.0.5"
