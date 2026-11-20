@@ -33,10 +33,10 @@ Initially oriented towards Defra service teams, the starter is intended for desi
 - **An editable starter service:** start → name → eligibility → check your answers → confirmation, with an ineligible branch and change-answer links.
 - **Browser answers:** session storage by default, optional local storage, form restoration and a clear-answers action.
 - **Optional routing styles:** ordinary form actions, navigation radios, answer-preserving `data-next` branches, or existing YAML journey rules. The build checks destinations and conflicts.
-- **Encrypted publishing by default:** the GitHub Pages workflow encrypts the complete generated site, with an explicit opt-out for public plaintext publishing.
+- **Encrypted publishing by default:** the GitHub Pages workflow encrypts the complete generated site, with an explicit opt-out for public plaintext publishing. After one unlock, pages open almost instantly: a service worker keeps the decrypted pages for the session.
 - **Research scenarios:** shareable, allowlisted scenario IDs with invented answers and predictable reset behaviour.
 - **Static deployment:** clean page URLs, one base-path helper, and a GitHub Actions workflow for repository sites and root/custom domains.
-- **Checks:** TypeScript, Vitest, Playwright, axe checks, root/subpath coverage and opt-in visual comparisons.
+- **Checks:** TypeScript, Vitest, Playwright, axe checks, root/subpath coverage, encrypted publishing in Chromium and WebKit (Safari's engine), and opt-in visual comparisons.
 
 This is a working starter repository. It is not a drop-in replacement for the Express-based GOV.UK Prototype Kit, a migration tool for existing prototypes, or a foundation for production application processing.
 
@@ -147,6 +147,8 @@ permalink: /my-service/name/
 ```
 
 Create the review page too, then register both routes in the journey configuration. The build rejects unknown destinations and duplicate permalinks. See the [starter pages](src/pages/example) for complete examples.
+
+To generate one page per record, such as a page for each item in a data file, use [Eleventy pagination](https://www.11ty.dev/docs/pagination/) with a computed permalink, for example `permalink: "/services/{{ service.id }}/"`. Paginated pages are built and link-checked like any other page. Because their routes are computed, they cannot be journey or form destinations by literal route: link to them instead.
 
 ### 2. Connect the steps
 
@@ -332,11 +334,21 @@ The build prompts for a strong, unique passphrase with input hidden (minimum 20 
 
 For GitHub Pages, add an Actions repository secret named `ENCRYPTION_PASSPHRASE`, then run the deployment workflow. No mode variable is needed: the default is `encrypted`. Missing/short credentials stop deployment without a plaintext fallback. Only an explicit Actions variable `PROTOTYPE_PUBLISH_MODE=static` selects public plaintext output; review changes to that setting.
 
-Unlocking is remembered in sessionStorage for the current tab using a derived decryption key. **Lock prototype** clears that key and the prototype's fictional answers, even when `storage: local` is enabled. Answer storage remains separate and unencrypted; see [saved answers and encrypted publishing](#saved-answers-and-encrypted-publishing-are-separate). The key is itself an access credential; untrusted scripts on the same origin can endanger it.
+Unlocking is remembered in sessionStorage for the current tab using a derived decryption key. **Lock prototype** clears that key, the decrypted pages and the prototype's fictional answers, even when `storage: local` is enabled. Answer storage remains separate and unencrypted; see [saved answers and encrypted publishing](#saved-answers-and-encrypted-publishing-are-separate). The key is itself an access credential; untrusted scripts on the same origin can endanger it.
 
 **This repository's starter source and screenshots are already public.** Encrypting a deployment cannot make those copies secret. Use a separate private source repository for withheld designs, review all publication channels and choose a long random passphrase: downloaded ciphertext permits offline password guessing. There is no individual access revocation, and downloaded copies cannot be recalled. JavaScript and HTTPS (or localhost) are required.
 
 Read the [encrypted export guide](docs/encrypted-export.md) for the exact publishing setup, browser behaviour, supported asset patterns and threat model. This mode is not a replacement for authenticated hosting of sensitive material.
+
+### How encrypted pages load
+
+- **One download.** The site is compressed before it is encrypted, so the encrypted file is usually much smaller than the site itself. The browser checks it with the server on each visit and downloads it again only after a deploy.
+- **Decrypt once.** After unlocking, a service worker keeps the decrypted pages in the browser's Cache Storage. Links, forms, refreshes and Back/Forward then load real pages without downloading or decrypting anything again: tens of milliseconds between pages on a typical connection.
+- **No flash of the unlock screen.** A tab that is already unlocked shows "Opening prototype" instead of the passphrase form while it opens a page. If opening fails, the form appears; it is never left waiting for more than 8 seconds.
+- **New deploys.** At most once a minute, moving between pages checks whether a new version has been published. If it has, the decrypted pages are cleared and the new version loads. A new deploy has a new salt, so people need the passphrase again.
+- **Safari and other browsers.** The encrypted suite runs in WebKit as well as Chromium. Where a browser has no service workers, or one does not start within 3 seconds, each page is decrypted and shown in place instead.
+
+**Decrypted pages stay on the device.** Readable copies of every page remain in the browser after the tab closes. They are cleared when someone locks the prototype, opens it in a tab without an unlocked session, or a new version is deployed. Closing the tab does not clear them: a service worker cannot detect that. Ask research participants to select **Lock prototype** when they finish, especially on shared devices.
 
 ### For material that requires access control
 
@@ -358,10 +370,10 @@ Use organisational authenticated hosting, or an access service configured to pro
 | `npm run test:gate` | Rebuild with the demo gate and test deep links, errors, refresh, sign-out and its explicit bypassability. |
 | `npm run test:visual` | Compare start, name and summary screenshots at desktop/mobile sizes. |
 
-Install Chromium once before browser tests:
+Install Chromium and WebKit once before browser tests (the encrypted suite also runs in WebKit, Safari's engine):
 
 ```sh
-npx playwright install chromium
+npx playwright install chromium webkit
 ```
 
 A complete local verification run:
@@ -418,7 +430,7 @@ The initial implementation follows four stages:
 | Research tools | Fictional scenario URLs and the optional, explicitly bypassable demo gate. |
 | Release foundation | Authoring/security documentation, architecture decisions, pinned dependencies, automated checks and visual baselines. |
 
-Encrypted export is the default GitHub Pages publishing mode with complete-file encryption, a generic unlock screen, tab-session unlocking, a lock action, CI-secret support and dedicated browser tests. See its [implementation and limitations](docs/encrypted-export.md).
+Encrypted export is the default GitHub Pages publishing mode with complete-file encryption, a compressed payload, a generic unlock screen, tab-session unlocking, decrypt-once page loading through a service worker, a lock action, CI-secret support and dedicated browser tests in Chromium and WebKit. See its [implementation and limitations](docs/encrypted-export.md).
 
 Useful next work includes making change-answer return routes fully configurable, broadening validation beyond required fields, and establishing reviewed Linux visual baselines for CI. These are future improvements, not capabilities claimed by the current kit.
 
@@ -428,6 +440,9 @@ Useful next work includes making change-answer return routes fully configurable,
 - **A page or its styles returns 404 after deployment:** check that `BASE_PATH` matches the hosted path, use the `url` filter, and run the local URL checker with that same base.
 - **A form does not save or navigate:** ensure JavaScript is enabled, the form has a valid local action, inline routing radios or `data-journey` with a YAML next rule. Check that controls have names and that the form is not marked `data-native`.
 - **A scenario seems to have disappeared:** it applies once and removes the URL parameter. Reopen its scenario URL to deliberately reapply it, or clear answers to start fresh.
+- **An encrypted prototype shows an old version after a deploy:** moving to another page picks up a new deploy within a minute. To see it straight away, select **Lock prototype** and unlock again.
+- **An encrypted page shows "Opening prototype" for a long time:** after 8 seconds the passphrase form appears. If it keeps happening, clear the site's stored data in the browser settings, then unlock again.
+- **The skip link, error summary or other GOV.UK components do nothing in a custom layout:** GOV.UK Frontend 6 only starts its components when `<body>` has the `govuk-frontend-supported` class. Copy the inline body script from [`base.njk`](src/_includes/layouts/base.njk) into any layout of your own.
 - **Browser tests fail while development is running:** stop development while the suite rebuilds shared output, and check ports 8081/8082 are free for the dedicated test servers.
 - **An upstream component looks different:** inspect the pinned GOV.UK Frontend version and review the screenshot differences before updating baselines.
 
@@ -439,12 +454,12 @@ Kit code is [MIT licensed](LICENSE). GOV.UK Frontend and other dependencies reta
 
 Use `npm run dev` while presenting or editing: save content, try the journey locally, then push a complete change once. Small local edits do not need a Pages deployment. Keep the local server running between edits.
 
-A push to `main` now runs the required Checks workflow before deploying. TypeScript, unit tests and link checking run alongside four parallel browser suites: root, repository subpath, demo gate and encrypted export. Every browser suite still covers desktop and mobile; the encrypted suite also runs in WebKit, Safari's engine. Pull requests and other branches run the same checks without deploying. A failed check blocks publication; there is no quick-publish bypass. GitHub branch protections can require the `core` and `browsers` jobs.
+A push to `main` now runs the required Checks workflow before deploying. TypeScript, unit tests and link checking run alongside four parallel browser suites: root, repository subpath, demo gate and encrypted export. Every browser suite still covers desktop and mobile; the encrypted suite also runs in WebKit, Safari's engine. Pull requests run the same checks without deploying; for a branch without a pull request, run the Checks workflow manually. A failed check blocks publication; there is no quick-publish bypass. GitHub branch protections can require the `core` and `browsers` jobs.
 
 GitHub caches npm downloads and the exact lockfile-matched Playwright Chromium and WebKit installation. Linux system dependencies are still verified on every runner. Only dependencies are cached in Actions: no generated pages, decrypted archives, passwords or derived keys. Cold runs still download the browsers, and Pages provisioning can still take time; warm-run timings depend on runner availability.
 
 Within a checkout, repeated builds reuse CSS and JavaScript only when input fingerprints and output hashes match. Changes to assets, tooling, the lockfile or Node version rebuild them; altered/missing output also rebuilds. Delete `build/` to force a cold asset build. HTML, route validation, link checks and encryption still run every time. Encryption always uses fresh salts and IVs and the existing password-derivation strength.
 
-After unlocking an encrypted prototype, a service worker keeps the decrypted pages in the browser's Cache Storage, so links, forms, refreshes and Back/Forward load real pages without downloading or decrypting the payload again. Those copies stay on the device until someone locks the prototype, opens it in a tab without an unlocked session, or a new version is deployed: closing the tab does not clear them. Browsers without service workers decrypt and render each page in place. The [encrypted export guide](docs/encrypted-export.md) covers the trade-offs. Decrypted pages are never saved to localStorage or an Actions cache.
+Encrypted prototypes download and decrypt once per session, then load pages from a service worker: see [how encrypted pages load](#how-encrypted-pages-load). Decrypted pages are never saved to localStorage or an Actions cache.
 
 If a browser-test port is occupied, choose an unused port without stopping other servers, for example `TEST_PORT=19181 npm run test:e2e` or `TEST_PORT=19182 npm run test:encrypted`.
