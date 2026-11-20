@@ -13,7 +13,7 @@ try {
 } catch (_) {}
 </script>
 <title>Unlock prototype</title><link rel="icon" href="{{ root }}assets/images/favicon.ico">
-<link rel="stylesheet" href="{{ root }}unlock.css"></head>
+<link rel="stylesheet" href="{{ root }}unlock.css?v={{ cssVersion }}"></head>
 <body class="govuk-template__body"><div id="unlock-screen"><header>{{ govukHeader({productName:'Encrypted prototype'}) }}</header>
 <div class="govuk-width-container"><main id="main-content" class="govuk-main-wrapper"><div class="govuk-grid-row"><div class="govuk-grid-column-two-thirds">
 <div id="unlock-error" class="govuk-error-summary" tabindex="-1" role="alert" hidden><h2 class="govuk-error-summary__title">There is a problem</h2><p id="unlock-error-message" class="govuk-body"></p></div>
@@ -27,4 +27,4 @@ try {
 <p class="govuk-body" id="unlock-status" role="status"></p>
 </form></div></div></main></div><footer>{{ govukFooter({}) }}</footer>
 </div>
-<script src="{{ root }}unlock.js" data-payload="{{ root }}payload.json" onerror="document.documentElement.classList.remove('encrypted-opening')" defer></script></body></html>
+<script src="{{ root }}unlock.js?v={{ jsVersion }}" data-payload="{{ root }}payload.json" onerror="document.documentElement.classList.remove('encrypted-opening')" defer></script></body></html>

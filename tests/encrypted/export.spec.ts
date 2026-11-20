@@ -9,6 +9,8 @@ async function unlock(page: any) {
 }
 test('export contains ciphertext, generic shells and official assets only',async({request})=>{
  const entry=await request.get(base+'example/name/');
+ // Unlock assets are referenced by content hash, so a new deploy never mixes old and new.
+ const shell=await entry.text();expect(shell).toMatch(/unlock\.css\?v=[a-f0-9]{12}"/);expect(shell).toMatch(/unlock\.js\?v=[a-f0-9]{12}"/);
  expect(await entry.text()).not.toContain('What is your name?');
  expect(await entry.text()).not.toContain('Robin Example');
  const payload=await (await request.get(base+'__encrypted/payload.json')).text();

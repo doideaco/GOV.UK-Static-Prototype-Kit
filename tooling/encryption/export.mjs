@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import fs from 'node:fs/promises';
 import { gzipSync } from 'node:zlib';
 import path from 'node:path';
@@ -43,7 +44,12 @@ export async function exportEncrypted({passphrase, base = process.env.BASE_PATH 
   // Compress before encrypting: ciphertext does not compress, and the archive is mostly repetitive HTML.
   const payload = await encryptWithKey(gzipSync(Buffer.from(JSON.stringify({files})), {level: 9}).toString('base64'), key);
   const env = new nunjucks.Environment(new nunjucks.FileSystemLoader(['tooling/encryption','node_modules/govuk-frontend/dist']), {autoescape:true});
-  const shell = env.render('unlock.njk', {root: `${base}__encrypted/`, credentialKey: JSON.stringify(`govuk-static-kit:encrypted:${base}`)});
+  // Compile the unlock assets first so the shell can reference them by content hash. GitHub Pages lets
+  // browsers cache files for 10 minutes, which would otherwise mix an old stylesheet or script with a new shell.
+  const unlockCss = compileString('@use "govuk/index" with ($govuk-assets-path: "./assets/"); [hidden] {display:none !important}', {loadPaths:['node_modules/govuk-frontend/dist'],style:'compressed',quietDeps:true}).css;
+  const unlockJs = (await build({entryPoints:['tooling/encryption/unlock.ts'],write:false,bundle:true,minify:true,target:'es2022',external:['node:crypto']})).outputFiles[0].text;
+  const version = text => createHash('sha256').update(text).digest('hex').slice(0,12);
+  const shell = env.render('unlock.njk', {root: `${base}__encrypted/`, credentialKey: JSON.stringify(`govuk-static-kit:encrypted:${base}`), cssVersion: version(unlockCss), jsVersion: version(unlockJs)});
   // Build outside the publish folder. Replace it only when the export is complete.
   const staging = await fs.mkdtemp(path.resolve('.encrypted-stage-'));
   try {
@@ -51,9 +57,9 @@ export async function exportEncrypted({passphrase, base = process.env.BASE_PATH 
     await fs.mkdir(publicDir, {recursive:true});
     await fs.copyFile('node_modules/staticrypt/LICENSE',path.join(publicDir,'STATICRYPT-LICENSE.txt'));
     await fs.writeFile(path.join(publicDir,'payload.json'), JSON.stringify({format:2,compression:'gzip',salt,payload,base}));
-    await fs.writeFile(path.join(publicDir,'unlock.css'), compileString('@use "govuk/index" with ($govuk-assets-path: "./assets/"); [hidden] {display:none !important}', {loadPaths:['node_modules/govuk-frontend/dist'],style:'compressed',quietDeps:true}).css);
+    await fs.writeFile(path.join(publicDir,'unlock.css'), unlockCss);
     await fs.cp('node_modules/govuk-frontend/dist/govuk/assets', path.join(publicDir,'assets'), {recursive:true});
-    await build({entryPoints:['tooling/encryption/unlock.ts'],outfile:path.join(publicDir,'unlock.js'),bundle:true,minify:true,target:'es2022',external:['node:crypto']});
+    await fs.writeFile(path.join(publicDir,'unlock.js'), unlockJs);
     for (const page of pages) {
       const target = path.join(staging,page.slice(1));
       await fs.mkdir(path.dirname(target),{recursive:true});

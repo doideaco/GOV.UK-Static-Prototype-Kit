@@ -16,7 +16,9 @@ const urls: string[] = [];
 let envelopePromise: Promise<Envelope> | undefined;
 let opening = false;
 function envelope() {
-  return envelopePromise ||= fetch(payloadUrl, {cache:'no-store'}).then(async response => {
+  // Revalidate rather than skip the cache: an unchanged payload is a quick "not modified" on every
+  // full page load, and a new deploy is still picked up straight away.
+  return envelopePromise ||= fetch(payloadUrl, {cache:'no-cache'}).then(async response => {
     if (!response.ok) throw Error('Unable to load the encrypted prototype. Reload the page and try again.');
     const value = await response.json();
     if (![1,2].includes(value.format) || (value.format === 2 && value.compression !== 'gzip') || typeof value.salt !== 'string' || typeof value.payload !== 'string' || typeof value.base !== 'string') throw Error('Unsupported encrypted prototype format.');
