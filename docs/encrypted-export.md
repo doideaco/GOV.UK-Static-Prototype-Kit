@@ -54,14 +54,19 @@ Route directory names, the base path, approximate encrypted size and the existen
 
 ## What happens in the browser
 
-1. The generic shell fetches the encrypted map. It does not display underlying page content while unlocking.
-2. StatiCrypt derives a key from the visitor's passphrase and public salt, authenticates the ciphertext and decrypts it.
-3. The loader finds the current page, creates memory-only blob URLs for its local assets and rewrites the HTML/CSS references before rendering it.
-4. Ordinary links and form navigation load another generic shell at the next static route. The remembered session key decrypts it again without another prompt.
+1. The generic shell fetches the encrypted map, revalidating it with the server so a stale copy is never used. It does not display underlying page content while unlocking. If this tab is already unlocked, the form stays hidden and the shell shows "Opening prototype" instead.
+2. StatiCrypt derives a key from the visitor's passphrase and public salt, authenticates the ciphertext and decrypts it. The map is gzip-compressed before encryption and decompressed in the browser.
+3. **Decrypt once.** The loader hands every decrypted file to a service worker (`sw.js` at the base path) and reloads. The service worker keeps the files in Cache Storage and serves pages and assets from there, so later navigation needs no download or decryption. The encrypted files under `__encrypted/` always come from the network.
+4. Each decrypted page starts with a check: if the tab has no unlocked session, the page is hidden before it paints, the decrypted cache is cleared and the shell loads instead. A shell opened without a usable session also clears any decrypted pages left on the device.
+5. At most once a minute, a page navigation checks `__encrypted/version.txt`, which holds the deploy's salt. A new deploy clears the decrypted cache and loads the shell, bypassing the HTTP cache. The time of the last check is kept in Cache Storage, because Safari stops idle service workers quickly. Because the salt travels inside the payload, the version a page installs always matches `version.txt`, even if the shell itself came from a stale HTTP cache.
+6. **Loop breaker.** If a tab returns to the shell and installs twice within 30 seconds, it stops using the service worker and renders in place.
+7. **Fallback.** Where service workers are unavailable, or do not register within 3 seconds, the loader renders the page in place: it creates memory-only blob URLs for local assets, rewrites references and replaces the document. Each navigation then loads the shell and decrypts again with the remembered session key.
 
 The raw passphrase is not stored. A derived decryption key is stored in sessionStorage, namespaced by base path and tied to the build's salt. **That derived key is an access credential:** possession is sufficient to decrypt the build. It is not a harmless password hash. There is no long-lived “remember me” option or key-in-URL feature.
 
-**Lock prototype** removes the current tab's remembered key and that prototype's fictional answers, revokes its active blob URLs, and reloads the shell. Browser Back is checked to avoid restoring a usable unlocked page after locking. Locking is not secure erasure of memory or revocation of content a visitor has already copied. Other unlocked tabs retain their own session credentials. Browsers can duplicate/restore tab session storage, so closing a tab is not a reliable revocation mechanism.
+**Decrypted pages are stored on the device.** With the service worker, readable copies of every page stay in Cache Storage after the tab closes. They are cleared when someone locks the prototype, opens it in a tab without an unlocked session, or a new version is deployed, not when the tab closes: a service worker cannot detect that. Treat a device that has unlocked the prototype as holding its content until one of those happens.
+
+**Lock prototype** removes the current tab's remembered key and that prototype's fictional answers, clears the decrypted cache, revokes any blob URLs, and reloads the shell. Browser Back is checked to avoid restoring a usable unlocked page after locking. Locking is not secure erasure of memory or revocation of content a visitor has already copied. Other unlocked tabs keep their session credentials and decrypt again on their next navigation. Browsers can duplicate/restore tab session storage, so closing a tab is not a reliable revocation mechanism.
 
 If sessionStorage is blocked, initial decryption still works but every full page navigation requires the passphrase again. HTTPS or localhost and JavaScript are required. Browser storage of answers is unchanged: encryption protects published files, not answers entered during research.
 
@@ -99,6 +104,6 @@ The suite leaves a test-specific build locally. Run `npm run build` afterwards t
 
 ## Faster checks without weakening encryption
 
-Deployment waits for the same required Checks workflow used by pull requests. Its root, subpath, demo-gate and encrypted desktop/mobile suites run in parallel. Chromium downloads are cached by OS, architecture and lockfile; system dependencies are installed on each runner. Build assets are reused only after input and output hash validation. Generated site files, passphrases and derived keys are never placed in the Actions dependency cache.
+Deployment waits for the same required Checks workflow used by pull requests. Its root, subpath, demo-gate and encrypted desktop/mobile suites run in parallel. Chromium and WebKit downloads are cached by OS, architecture and lockfile; system dependencies are installed on each runner. Build assets are reused only after input and output hash validation. Generated site files, passphrases and derived keys are never placed in the Actions dependency cache.
 
-The unlocked archive stays in document memory during internal navigation, so following links or submitting enhanced prototype forms does not download and decrypt the payload again. Refresh and direct links still use the encrypted shell; external links, modified clicks and downloads use normal browser navigation. Lock removes the remembered key and answers and reloads. Encryption parameters, authentication checks, fresh salts and fresh IVs are unchanged.
+After unlocking, a service worker serves decrypted pages from Cache Storage, so following links, submitting forms and refreshing do not download or decrypt the payload again. See [What happens in the browser](#what-happens-in-the-browser) for when those copies are cleared. Encryption parameters, authentication checks, fresh salts and fresh IVs are unchanged.

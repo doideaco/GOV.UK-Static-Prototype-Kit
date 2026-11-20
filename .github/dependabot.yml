@@ -3,6 +3,15 @@ updates:
   - package-ecosystem: npm
     directory: /
     schedule: {interval: weekly}
+    # One pull request a week for minor and patch updates, instead of one per package.
+    groups:
+      npm:
+        patterns: ["*"]
+        update-types: [minor, patch]
+    open-pull-requests-limit: 5
   - package-ecosystem: github-actions
     directory: /
     schedule: {interval: monthly}
+    groups:
+      actions:
+        patterns: ["*"]

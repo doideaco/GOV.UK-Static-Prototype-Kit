@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { matches, destination, validateJourneys, url } from '../../tooling/rules.mjs';
+import { matches, destination, validateJourneys, url, pageRoute } from '../../tooling/rules.mjs';
 import { createStore } from '../../src/assets/scripts/storage';
 describe('journey rules', () => {
  it('evaluates every supported operator without executable expressions', () => {
@@ -18,3 +18,14 @@ describe('journey rules', () => {
  it('prefixes root and repository URLs',()=>{expect(url('/a/','/')).toBe('/a/');expect(url('/a/','/sample-repo/')).toBe('/sample-repo/a/');});
 });
 it('retains answers and handles unavailable or corrupt storage',()=>{let raw='broken';const storage={getItem:()=>raw,setItem:(_:string,v:string)=>{raw=v;},removeItem:()=>{raw='{}';}} as Storage;const s=createStore(storage,'test');expect(s.read()).toEqual({});s.write({name:'Robin'});expect(createStore(storage,'test').read()).toEqual({name:'Robin'});s.clear();expect(s.read()).toEqual({});const fallback=createStore({} as Storage,'x');fallback.write({name:'A'});expect(fallback.read()).toEqual({name:'A'});});
+
+describe('page routes', () => {
+ it('reads directory permalinks and rejects anything else', () => {
+  expect(pageRoute({permalink:'/example/name/'},'name.njk')).toBe('/example/name/');
+  for (const permalink of [undefined,'/example/name','example/name/','/a b/']) expect(()=>pageRoute({permalink},'bad.njk')).toThrow('Page bad.njk needs an absolute directory permalink');
+  expect(()=>pageRoute(null,'none.njk')).toThrow('needs an absolute directory permalink');
+ });
+ it('skips paginated templates, whose permalinks are computed per item', () => {
+  expect(pageRoute({pagination:{data:'services',size:1,alias:'service'},permalink:'/services/{{ service.id }}/'},'service.njk')).toBeNull();
+ });
+});

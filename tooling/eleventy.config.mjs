@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import { createRequire } from 'node:module';
 import YAML from 'yaml';
-import { validateJourneys, url } from './rules.mjs';
+import { validateJourneys, url, pageRoute } from './rules.mjs';
 import { compileFormRouting } from './form-routing.mjs';
 // Use Eleventy's engine instance so imported macros share its SafeString type.
 const require = createRequire(import.meta.url);
@@ -16,10 +16,8 @@ function configuration(base) {
   const routes = files.map(f => {
     const source = fs.readFileSync(`src/pages/${f}`, 'utf8');
     const front = source.match(/^---\n([\s\S]*?)\n---/);
-    const route = front && YAML.parse(front[1]).permalink;
-    if (typeof route !== 'string' || !/^\/(?:[a-zA-Z0-9_.-]+\/)*$/.test(route)) throw Error(`Page ${f} needs an absolute directory permalink`);
-    return route;
-  });
+    return pageRoute(front && YAML.parse(front[1]), f);
+  }).filter(Boolean);
   if (new Set(routes).size !== routes.length) throw Error('Duplicate page permalinks');
   validateJourneys(journeys, routes);
   for (const scenario of Object.values(scenarios)) if (!routes.includes(scenario.start)) throw Error('Unknown scenario start');
