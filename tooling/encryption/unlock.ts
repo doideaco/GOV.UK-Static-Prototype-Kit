@@ -1,9 +1,9 @@
 // @ts-expect-error StatiCrypt wrapper is shared between the Node exporter and browser.
 import { deriveKey, decryptWithKey } from './crypto.mjs';
 
-type FileEntry = {data: string; type: string};
+type FileEntry = {data?: string; text?: string; type: string};
 type Archive = {files: Record<string, FileEntry>};
-type Envelope = {format: number; salt: string; payload: string; base: string};
+type Envelope = {format: number; compression?: 'gzip'; salt: string; payload: string; base: string};
 const loader = document.currentScript as HTMLScriptElement;
 const payloadUrl = loader.dataset.payload!;
 const form = document.querySelector<HTMLFormElement>('#unlock-form')!;
@@ -19,7 +19,7 @@ function envelope() {
   return envelopePromise ||= fetch(payloadUrl, {cache:'no-store'}).then(async response => {
     if (!response.ok) throw Error('Unable to load the encrypted prototype. Reload the page and try again.');
     const value = await response.json();
-    if (value.format !== 1 || typeof value.salt !== 'string' || typeof value.payload !== 'string' || typeof value.base !== 'string') throw Error('Unsupported encrypted prototype format.');
+    if (![1,2].includes(value.format) || (value.format === 2 && value.compression !== 'gzip') || typeof value.salt !== 'string' || typeof value.payload !== 'string' || typeof value.base !== 'string') throw Error('Unsupported encrypted prototype format.');
     return value as Envelope;
   }).catch(error => { envelopePromise = undefined; throw error; });
 }
@@ -36,7 +36,13 @@ function showError(message: string) {
   summary.focus();
 }
 function decodeFile(file: FileEntry) {
-  return Uint8Array.from(atob(file.data), char => char.charCodeAt(0));
+  if (file.text !== undefined) return new TextEncoder().encode(file.text);
+  return Uint8Array.from(atob(file.data!), char => char.charCodeAt(0));
+}
+async function gunzip(base64: string) {
+  if (typeof DecompressionStream === 'undefined') throw Error('Update your browser to open this prototype.');
+  const bytes = Uint8Array.from(atob(base64), char => char.charCodeAt(0));
+  return new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
 }
 const blobCache = new Map<string,string>();
 let renderVersion = 0;
@@ -197,7 +203,7 @@ function installNavigation(archive: Archive, data: Envelope) {
 async function openWithKey(data: Envelope, key: string) {
   const result = await decryptWithKey(data.payload,key,data.salt);
   if (!result.success) return false;
-  const archive = JSON.parse(result.decoded) as Archive;
+  const archive = JSON.parse(data.compression === 'gzip' ? await gunzip(result.decoded) : result.decoded) as Archive;
   if (!archive.files || !Object.hasOwn(archive.files,'/index.html')) throw Error('The encrypted prototype is incomplete.');
   // Cache only a successful decryption key. It is a credential, not a harmless hash.
   remember(data,key);

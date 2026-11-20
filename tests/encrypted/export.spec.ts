@@ -12,6 +12,8 @@ test('export contains ciphertext, generic shells and official assets only',async
  expect(await entry.text()).not.toContain('What is your name?');
  expect(await entry.text()).not.toContain('Robin Example');
  const payload=await (await request.get(base+'__encrypted/payload.json')).text();
+ // Compressed before encryption, with text kept as text inside the archive.
+ const envelope=JSON.parse(payload);expect(envelope).toMatchObject({format:2,compression:'gzip'});
  expect(payload).not.toContain('Robin Example');expect(payload).not.toContain('countryside');
  expect(payload).not.toContain(process.env.ENCRYPTION_TEST_PASSPHRASE!);
  expect((await request.get(base+'assets/runtime.js')).status()).toBe(404);
