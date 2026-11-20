@@ -7,7 +7,7 @@
 <link rel="icon" href="{{ '/assets/images/favicon.ico' | url }}"><link rel="stylesheet" href="{{ '/assets/main.css' | url }}">
 {% if site.publicDemoGate.enabled %}<style>#prototype{display:none}</style>{% endif %}
 </head><body class="govuk-template__body">
-<script>document.body.className += ' js-enabled';</script>
+<script>document.body.className += ' js-enabled' + ('noModule' in HTMLScriptElement.prototype ? ' govuk-frontend-supported' : '');</script>
 {{ govukSkipLink({href: '#main-content', text: 'Skip to main content'}) }}
 {% if site.publicDemoGate.enabled %}
 <section aria-label="Prototype entry" id="demo-gate" class="govuk-width-container govuk-!-padding-top-9"><h1 class="govuk-heading-xl">Enter this prototype</h1><p class="govuk-body">This convenience gate does not protect the prototype or its files. Use fictional data only.</p><noscript><p class="govuk-body">Enable JavaScript to use this prototype and its demo gate.</p></noscript><form id="gate-form"><div class="govuk-form-group"><label class="govuk-label" for="gate-passphrase">Demo passphrase</label><p id="gate-error" class="govuk-error-message" hidden>Enter the correct demo passphrase</p><input class="govuk-input govuk-input--width-20" id="gate-passphrase" type="password" aria-describedby="gate-error"></div><button class="govuk-button">Continue</button></form></section>{% endif %}
