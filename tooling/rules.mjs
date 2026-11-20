@@ -33,6 +33,14 @@ export function validateJourneys(journeys, routes) {
     }
   }
 }
+// The route a page publishes from its front matter, or null for paginated templates: those compute
+// one permalink per item, so they cannot be journey or form destinations by literal route.
+export function pageRoute(frontMatter, file) {
+  if (frontMatter?.pagination) return null;
+  const route = frontMatter?.permalink;
+  if (typeof route !== 'string' || !/^\/(?:[a-zA-Z0-9_.-]+\/)*$/.test(route)) throw Error(`Page ${file} needs an absolute directory permalink`);
+  return route;
+}
 export function url(path, base = '/') { return `${base.replace(/\/$/, '')}/${path.replace(/^\//, '')}`; }
 
 export function resolveFormDestination(plan, submitted, answers) {
