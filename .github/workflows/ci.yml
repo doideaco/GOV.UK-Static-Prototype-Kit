@@ -1,8 +1,8 @@
 name: Checks
 on:
+  # Pull requests only: a push to a branch with an open pull request would otherwise run every check twice.
+  # main is checked by the deploy workflow, which calls this one.
   pull_request:
-  push:
-    branches-ignore: [main]
   workflow_dispatch:
   workflow_call:
 permissions:
