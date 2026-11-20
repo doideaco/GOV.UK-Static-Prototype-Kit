@@ -1,26 +1,23 @@
 {% from "govuk/components/header/macro.njk" import govukHeader %}
 {% from "govuk/components/footer/macro.njk" import govukFooter %}
+{% from "govuk/components/skip-link/macro.njk" import govukSkipLink %}
 {% from "govuk/components/input/macro.njk" import govukInput %}
 {% from "govuk/components/button/macro.njk" import govukButton %}
 <!doctype html><html lang="en" class="govuk-template"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow"><meta name="referrer" content="no-referrer">
-<style>html.encrypted-opening #unlock-screen { display: none; }</style>
-<script>
-// Check before first paint. A saved key is a hint, not proof of access.
-try {
-  if (sessionStorage.getItem({{ credentialKey | safe }})) {
-    document.documentElement.classList.add('encrypted-opening');
-    // unlock.js removes this when it is done. If it loads but throws or stalls, onerror below does not
-    // fire, so never leave the page blank for more than 8 seconds.
-    setTimeout(function () { document.documentElement.classList.remove('encrypted-opening'); }, 8000);
-  }
-} catch (_) {}
-</script>
 <title>Unlock prototype</title><link rel="icon" href="{{ root }}assets/images/favicon.ico">
+{# When this tab is already unlocked, hide the form before first paint and show "Opening prototype" instead.
+   A saved key is a hint, not proof of access: unlock.js shows the form again if it does not work. #}
+<script>try{if(sessionStorage.getItem({{ sessionKey | dump | safe }})){var r=document.documentElement;r.className+=' encrypted-resuming';
+{#- If unlock.js never runs (blocked, failed to load, or errors early), never leave the page on "Opening prototype". #}
+setTimeout(function(){if(r.classList.contains('encrypted-resuming')){r.classList.remove('encrypted-resuming');var i=document.getElementById('encryption-passphrase');if(i){i.disabled=false;i.focus()}var b=document.querySelector('#unlock-form button');if(b)b.disabled=false}},8000)}}catch(e){}</script>
+<style>.encrypted-resuming__status{display:none}.encrypted-resuming .encrypted-resuming__status{display:block}.encrypted-resuming .encrypted-unlock{display:none}</style>
 <link rel="stylesheet" href="{{ root }}unlock.css?v={{ cssVersion }}"></head>
-<body class="govuk-template__body"><div id="unlock-screen"><header>{{ govukHeader({productName:'Encrypted prototype'}) }}</header>
+<body class="govuk-template__body">{{ govukSkipLink({href:'#main-content', text:'Skip to main content'}) }}<header class="govuk-template__header">{{ govukHeader({productName:'Encrypted prototype'}) }}</header>
 <div class="govuk-width-container"><main id="main-content" class="govuk-main-wrapper"><div class="govuk-grid-row"><div class="govuk-grid-column-two-thirds">
+<p class="govuk-body encrypted-resuming__status" role="status">Opening prototype</p>
+<div class="encrypted-unlock">
 <div id="unlock-error" class="govuk-error-summary" tabindex="-1" role="alert" hidden><h2 class="govuk-error-summary__title">There is a problem</h2><p id="unlock-error-message" class="govuk-body"></p></div>
 <h1 class="govuk-heading-l">Unlock this prototype</h1><p class="govuk-body">Enter the passphrase shared with you. This prototype is encrypted and will be decrypted in your browser.</p>
 <p class="govuk-body">Use fictional information only. Unlocking is remembered for this tab session. Use “Lock prototype” when you finish.</p>
@@ -30,6 +27,5 @@ try {
 <p id="unlock-hint" class="govuk-hint">Ask the person who shared the prototype if you do not have the passphrase.</p>
 {{ govukButton({text:'Unlock prototype',disabled:true}) }}
 <p class="govuk-body" id="unlock-status" role="status"></p>
-</form></div></div></main></div><footer>{{ govukFooter({}) }}</footer>
-</div>
-<script src="{{ root }}unlock.js?v={{ jsVersion }}" data-payload="{{ root }}payload.json" onerror="document.documentElement.classList.remove('encrypted-opening')" defer></script></body></html>
+</form></div></div></div></main></div><footer class="govuk-template__footer">{{ govukFooter({}) }}</footer>
+<script src="{{ root }}unlock.js?v={{ jsVersion }}" data-payload="{{ root }}payload.json?v={{ payloadVersion }}" defer></script></body></html>
