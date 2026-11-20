@@ -85,7 +85,8 @@ test('unlocked navigation keeps the document and works without network requests'
  await expect(page.getByLabel('What is your name?')).toBeVisible();
  await page.evaluate(()=>{(window as any).navigationSentinel='same document';});
  const requests:string[]=[];
- await page.route('**/*',route=>{requests.push(route.request().url());return route.abort();});
+ // WebKit also routes blob: URLs, which are in-memory and never touch the network.
+ await page.route('**/*',route=>{if(route.request().url().startsWith('blob:'))return route.continue();requests.push(route.request().url());return route.abort();});
  await page.getByLabel('What is your name?').fill('Offline Example');
  await page.getByRole('button',{name:'Continue',exact:true}).click();
  await page.getByLabel('Yes',{exact:true}).check();await page.getByLabel('Walking',{exact:true}).check();
