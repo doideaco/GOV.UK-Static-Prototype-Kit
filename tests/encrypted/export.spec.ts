@@ -102,3 +102,10 @@ test('unlocked navigation keeps the document and works without network requests'
  await expect(page.getByRole('heading',{name:'Unlock this prototype'})).toBeVisible();
  await page.goBack();await expect(page.getByRole('heading',{name:'Unlock this prototype'})).toBeVisible();
 });
+test('an unlocked tab still gets the unlock screen if unlock.js throws',async({page})=>{
+ await page.goto(base+'example/name/');await unlock(page);await expect(page.getByLabel('What is your name?')).toBeVisible();
+ await page.route('**/__encrypted/unlock.js*',route=>route.fulfill({contentType:'application/javascript',body:'throw new Error("broken")'}));
+ await page.reload();
+ await expect(page.getByRole('heading',{name:'Unlock this prototype'})).toBeHidden();
+ await expect(page.getByRole('heading',{name:'Unlock this prototype'})).toBeVisible({timeout:12000});
+});

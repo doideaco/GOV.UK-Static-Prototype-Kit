@@ -9,7 +9,12 @@
 <script>
 // Check before first paint. A saved key is a hint, not proof of access.
 try {
-  if (sessionStorage.getItem({{ credentialKey | safe }})) document.documentElement.classList.add('encrypted-opening');
+  if (sessionStorage.getItem({{ credentialKey | safe }})) {
+    document.documentElement.classList.add('encrypted-opening');
+    // unlock.js removes this when it is done. If it loads but throws or stalls, onerror below does not
+    // fire, so never leave the page blank for more than 8 seconds.
+    setTimeout(function () { document.documentElement.classList.remove('encrypted-opening'); }, 8000);
+  }
 } catch (_) {}
 </script>
 <title>Unlock prototype</title><link rel="icon" href="{{ root }}assets/images/favicon.ico">
