@@ -216,7 +216,7 @@ async function openWithKey(data: Envelope, key: string) {
 form.addEventListener('submit', async event => {
   event.preventDefault();
   if (opening) return;
-  opening = true; button.disabled = true; summary.hidden = true; status.textContent = 'Unlocking prototype…';
+  opening = true; button.disabled = true; summary.hidden = true; status.textContent = 'Unlocking prototype';
   try {
     if (!globalThis.crypto?.subtle) throw Error('Open this prototype over HTTPS or localhost to use browser decryption.');
     const data = await envelope();
